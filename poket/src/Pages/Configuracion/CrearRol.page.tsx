@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { isValidPermission } from "../../utils/is.valid.permissions";
 import AddRolSvg from "../../assets/icons/AddRol.svg";
 import CloseSvg from "../../assets/icons/Close.svg";
-import { useAuth } from "../../hooks/useAuth";
 import { useAlert } from "../../context/AlertProviderContext";
 import { IPermissions } from "../../interfaces/permisos.interface";
 import { listPermissionService } from "../../services/permisos.services";
@@ -11,10 +9,7 @@ import { Box, Button, Chip, CircularProgress, TextField, Typography } from "@mui
 import Grid from "@mui/material/Grid2";
 
 export const CrearRolPage = () => {
-    const { logout } = useAuth();
-    if (!isValidPermission("user.can_add")) {
-        logout();
-    }
+ 
 
     const { setAlert } = useAlert();
     const [rol, setRol] = useState<string>("");

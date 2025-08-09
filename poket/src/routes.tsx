@@ -1,6 +1,5 @@
 import { Route, Routes } from "react-router"
 import { DashboardPage } from "./Pages/Dashboard/Dashboard.page"
-import { ConfiguracionPage } from "./Pages/Configuracion/Configuracion.page"
 import { CrearRolPage } from "./Pages/Configuracion/CrearRol.page"
 import { LoginPage } from "./Pages/LoginPage"
 import { UnauthorizedPage } from "./Pages/UnauthorizedPage"
@@ -33,7 +32,6 @@ export const WebRoutes = () => {
 
 
                 {/* Roles y Configuraciones */}
-                <Route path="configuracion" element={<ConfiguracionPage />} />
                 <Route path="crear-rol" element={<CrearRolPage />} />
 
             </Route>

@@ -19,7 +19,7 @@ export const getProductByKey = ({clave} : {clave: string}) => {
 
             // const response: AxiosResponse = await clientAdmin.get('/ruta')
             setTimeout(() => {
-
+                console.log(clave)
                 resolve(product);
 
             }, 1000);

@@ -1,19 +1,15 @@
 import { Box, Container, Typography, AppBar, Toolbar, Drawer, IconButton } from "@mui/material"
 import MenuIcon from '@mui/icons-material/Menu'
 import { useState } from "react"
-import { Navigate, Outlet } from "react-router"
+import { Outlet } from "react-router"
 import DrawerComponent from '../components/Globales/Drawer.component'
 import { useLocation } from "react-router"
 import { headerTitles } from "../utils/header.title.route"
-import { getTokenAuth } from "../utils/options.token"
-
 
 
 export const AdminLayout = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation(); 
-    const tokenAuth = getTokenAuth()
-        
         
     // if (!tokenAuth) {
     //     return <Navigate to="/login" />;

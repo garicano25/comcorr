@@ -10,15 +10,18 @@ export function useUser(token: string): Array<IUser> {
         decoded = jwtDecode<IUser>(token);
         // Transformamos los datos decodificados en el formato esperado
         const id = decoded.id;
-        const username = decoded.username;
-        const is_superuser = decoded.is_superuser;
-        const permissions_all = decoded.permissions_all;
+        const Usuarios = decoded.Usuarios;
+        const role = decoded.role;
+        const RoleName = decoded.RoleName;
+        const email = decoded.email;
+        const dirreccion = decoded.dirreccion;
+        const phone = decoded.phone;
         const exp = typeof decoded.exp === "number"
             ?  Number(new Date(decoded.exp * 1000))
             : 0;
         // const sda = exp > Date.now();
 
-        return [{ id, username, is_superuser, permissions_all, exp }];
+        return [{ id, email, dirreccion, exp,phone,role,RoleName,Usuarios }];
 
 
     } catch (error) {

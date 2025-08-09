@@ -4,13 +4,9 @@ import logoGs from "../../assets/logo.svg";
 import HomeIconSvg from "../../assets/icons/SlideBar/Home.svg";
 import LogOutIconSvg from "../../assets/icons/SlideBar/LogOut.svg";
 import InfoSvg from "../../assets/icons/SlideBar/info.svg";
-import SettingSvg from "../../assets/icons/SlideBar/Settings.svg";
 import DocsSvg from "../../assets/icons/SlideBar/Doc.svg";
 import CreateFolioSvg from "../../assets/icons/SlideBar/CreateFolio.svg";
 import BaseSvg from "../../assets/icons/SlideBar/Base.svg";
-import ConciliadorSvg from "../../assets/icons/SlideBar/Conciliador.svg";
-import AskSvg from "../../assets/icons/SlideBar/Ask.svg";
-import CloseSvg from "../../assets/icons/SlideBar/Close.svg";
 import { useLocation, useNavigate } from "react-router"
 import { useAuth } from "../../hooks/useAuth";
 import React from "react";
@@ -22,7 +18,6 @@ const DrawerComponent: React.FC = () => {
     
     
     const [open, setOpen] = React.useState(true);
-    const [openBd, setOpenBD] = React.useState(true);
     const location = useLocation(); 
     const navigate = useNavigate();
 
@@ -36,10 +31,7 @@ const DrawerComponent: React.FC = () => {
     
     const handleClick = () => {
         setOpen(!open);
-    };
-    const handleClickBd = () => {
-        setOpenBD(!openBd);
-    };
+    }
 
     return (
      <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>

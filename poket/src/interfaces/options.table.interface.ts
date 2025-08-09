@@ -1,4 +1,3 @@
-import { TableColumn } from "react-data-table-component";
 
 export interface IColumns {
     nombre: string;
@@ -24,7 +23,6 @@ export interface IColumnsFilters {
 }
 
 export interface ITableCustomComponentProps<T> {
-    columns: TableColumn<T>[];
     columnsFilters?: Array<IColumnsFilters>;
     data: T[];
     componentOptional?: React.ReactNode;
