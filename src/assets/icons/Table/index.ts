@@ -1,0 +1,5 @@
+export * from './pageFirstIcon'
+export * from './pageLastIcon'
+export * from './pageNextIcon'
+export * from './pagePreviousIcon'
+export * from './shorIcon'

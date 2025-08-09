@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pocket-comcorr-front
+    ports:
+      - "80:80"
+    networks:
+      - develop
+    volumes:
+      - ./frontend:/app
+
+networks:
+  develop:
+
