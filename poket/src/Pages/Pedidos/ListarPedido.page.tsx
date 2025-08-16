@@ -4,8 +4,8 @@ import { useParamsRoute } from "../../context/ParamsRouteContext";
 import { Box, Button, Chip, Icon, Menu, MenuItem, Tooltip, useMediaQuery, useTheme, Zoom } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales";
-import { IListPedidos, IResponseEstatusPedido } from "../../interfaces/pedidos.interface";
-import { aprovePedidoService, declinePedidoService, listPedidos } from "../../services/pedido.services";
+import { IListPedidos, IResponseEstatusPedido, IResponseInfoPedido } from "../../interfaces/pedidos.interface";
+import { aprovePedidoService, declinePedidoService, getInfoPedido, listPedidos } from "../../services/pedido.services";
 import { useAlert } from "../../context/AlertProviderContext";
 import { decodeToken } from "../../utils/options.token";
 import { IUser } from "../../interfaces/user.interface";
@@ -49,8 +49,11 @@ export function ListarPedidoPage() {
     };
 
 
-    const showAlert = (id: number, requiere_aprobacion: number) => {
-        if (requiere_aprobacion === 1) {
+    const showAlert =  async (id: number) => {
+
+        const hasProductAprove = await loadInfoPedido(id);
+
+        if (hasProductAprove) {
                setAlert({
                    title: 'No disponible',
                    text: 'El pedido tiene articulos con precios convenidos sin confirmar.',
@@ -60,7 +63,6 @@ export function ListarPedidoPage() {
                });
             return;
         }
-
 
         if (token) {
             if (token.role === 1) {
@@ -215,11 +217,11 @@ export function ListarPedidoPage() {
                     >
                         <MenuItem onClick={() => { 
                             if (selectedRow) {
-                                showAlert(selectedRow.id, selectedRow.requiere_aprobacion);
+                                showAlert(selectedRow.id);
                             }
                             handleClose();
                         }}
-                        >Aprovar</MenuItem>
+                        >Aprobar</MenuItem>
                         <MenuItem onClick={() => { 
                             if (selectedRow) {
                                 showAlertDecline(selectedRow.id);
@@ -346,6 +348,30 @@ export function ListarPedidoPage() {
         } 
     }
 
+
+    // Función que valida si hay productos pendientes de aprobación
+    const hasPendienteConAprobacion = (articulos: any[]): boolean => {
+        return articulos.some(
+            (item) => item.requiere_aprobacion === 1 && item.estado === "pendiente"
+        );
+    };
+
+
+    // Obtencios de la información del pedido por idPedido
+   const loadInfoPedido = async (idPedido: number) => {
+    try {
+        const response: IResponseInfoPedido = await getInfoPedido({ idPedido: Number(idPedido) });
+
+        const porAprobar = hasPendienteConAprobacion(response.articulos);
+
+        return porAprobar;
+
+    } catch (error) {
+        console.log('Error al consultar la informacion del pedido: ' + error);
+        enqueueSnackbar("Hubo un error al intentar consultar los articulos del pedido, intente nuevamente.", { variant: 'error' });
+        return false;
+    }
+};
 
     
     useEffect(() => {
