@@ -8,38 +8,83 @@ export interface IProduct {
 }
 
 
-
 export interface IProductSelected {
-    id: string;
-    name: string;
-    description: string;
-    stock: number;
+    id: number;
+    clave: string;
+    descripcion: string;
+    articulo_id: number;
     cantidad: number;
-    price_updated: boolean;
-    price_last: string
-    price_new: string;
-    total: number | null;
+    precio_unitario: number
+  
 }
 
 
-export interface IPedidosTable {
-    id: string,
-    clave_producto: string,
-    nom_producto: string,
-    cliente: string,
-    cantidad: string,
-    precio: string,
-    fecha_solicitud: string,
-    fecha_entrega: string,
-    estatus : "En Proceso" | "En Ruta" | "En Recolección" | "Entregado"
+export interface IPayloadProductos {
+    articulo_id: number,
+    cantidad: number,
+    precio_unitario: number
 }
 
-export interface IPedidoInfo {
-    id: string,
-    cliente: string,
-    fecha_solicitud: string,
-    fecha_entrega: string,
-    direccion: string,
-    comentario: string,
-    estatus : "En Proceso" | "En Ruta" | "En Recolección" | "Entregado"
+
+export interface IPayloadPedido {
+    direccion_id: number,
+    cliente_id: number,
+    articulos: IPayloadProductos[]
+}
+
+export interface IResponseCreatePedido {
+    success: boolean,
+    pedido_id:number
+}
+
+
+
+// Interfaces Lista de Pedidos
+export interface IListPedidos {
+  id: number;
+  usuario_id: number;
+  direccion_id: number;
+  cliente_id: number;
+  fecha_creacion: string;
+  estado: "aceptado" | "en proceso" | "rechazado";
+  requiere_aprobacion: number;
+  aprobado_por: number;
+  fecha_aprobacion: string;
+  cliente_nombre: string;
+  cliente_clave: string;
+  cliente_telefono?: string;
+}
+
+export interface IResponseGetPedidos{
+  page: number,
+  limit: number,
+  totalRecords: number,
+  totalPages: number,
+  pedidos: IListPedidos[]
+}
+
+
+export interface IResponseEstatusPedido {
+  success: boolean,
+  mensaje: string
+
+}
+
+export interface IArticulosPedido {
+  id: number;
+  pedido_id: number;
+  articulo_id: number;
+  cantidad: number;
+  precio_unitario: string;
+  total: string;
+  requiere_aprobacion: number;
+  aprobado_por: string | null;
+  fecha_aprobacion: string | null;
+  estado: "aceptado" | "en proceso" | "rechazado";
+  descripcion: string;
+}
+
+export interface IResponseInfoPedido {
+    pedido: IListPedidos
+    articulos: IArticulosPedido[]
 }

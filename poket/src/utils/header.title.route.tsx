@@ -16,7 +16,7 @@ export function headerTitles(key: string) : JSX.Element{
                 <Tooltip title="Regresar a Gestión de Pedidos" slots={{ transition: Zoom }}>
                     <NavLink to={'consultar-pedido'} style={{ marginRight: '10px', marginTop: '10px' }} end> <Icon>chevron_left</Icon> </NavLink>
                 </Tooltip>
-                <Typography variant="h4" color="text.primary" sx={{ fontWeight: 600 }}> Pedido Folio. {params}</Typography>
+                <Typography variant="h4" color="text.primary" sx={{ fontWeight: 600 }}> Pedido No. #{params}</Typography>
             </Stack>
         )
     } else if (key.includes('/cotizacion/')) {

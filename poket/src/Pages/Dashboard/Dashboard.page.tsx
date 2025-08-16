@@ -1,10 +1,11 @@
 import Grid from '@mui/material/Grid2';
-import { Box, Stack, Typography, Card, CardContent, Icon, Skeleton, Button } from "@mui/material";
+import { Box, Stack, Typography, Card, CardContent, Icon, Button, CircularProgress } from "@mui/material";
 import { motion } from "framer-motion";
 import { Navigate, useNavigate } from "react-router";
 import { useAuth } from '../../hooks/useAuth';
 import { decodeToken } from '../../utils/options.token';
-
+import { useEffect, useState } from 'react';
+import { listPedidos } from '../../services/pedido.services';
 
 export const DashboardPage = () => {
 
@@ -17,7 +18,51 @@ export const DashboardPage = () => {
     const navigate = useNavigate();
     const user = decodeToken();
     const typeUser = user?.role; // 1 = admin, 2 = user
-   
+
+    const [pending, setPending] = useState(true);
+    const [total, setTotal] = useState(0);
+    const [aprobados, setAprobados] = useState(0);
+    const [rechazados, setRechazados] = useState(0);
+    const [now, setNow] = useState(new Date());
+    
+    const getPedidos = async () => {
+        setPending(true);
+        try {
+
+            const data = await listPedidos();
+            
+            if (data && data.pedidos) {
+                // total pedidos
+                setTotal(data.pedidos.length);
+
+                // pedidos aceptados
+                setAprobados(data.pedidos.filter(p => p.estado === "aceptado").length);
+
+                // pedidos rechazados
+                setRechazados(data.pedidos.filter(p => p.estado === "rechazado").length);
+            }
+
+        } finally {
+            setPending(false);
+        }
+    };
+
+
+    useEffect(() => {
+        getPedidos();
+        const id = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(id);
+        
+    }, []);
+
+
+    const timeText = now.toLocaleTimeString("es-MX", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+    });
+
     return (
         <>
             {(typeUser === 1) ? (
@@ -33,7 +78,10 @@ export const DashboardPage = () => {
                                             Pedidos Creados
                                         </Typography>
                                         <Stack spacing={2} direction="row" sx={{ justifyContent: "start", mt: 2 }}>
-                                            <Typography sx={{ color: 'text.secondary', mt: 1, fontSize: 40, fontWeight: 700 }}><Icon color="primary" fontSize="inherit">assignment</Icon> 8 </Typography>
+                                            {pending
+                                                ? <CircularProgress/> 
+                                                :  <Typography sx={{ color: 'text.secondary', mt: 1, fontSize: 40, fontWeight: 700 }}><Icon color="primary" fontSize="inherit">assignment</Icon> {total} </Typography>
+                                            }
                                         </Stack>
                                     </CardContent>
                                 </Card>
@@ -44,9 +92,12 @@ export const DashboardPage = () => {
                             <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
                                 <Card sx={{ width: "100%" }}>
                                     <CardContent>
-                                        <Typography sx={{ fontWeight: 600, fontSize: 20 }}>Pedidos en proceso</Typography>
+                                        <Typography sx={{ fontWeight: 600, fontSize: 20 }}>Pedidos en Aprobados</Typography>
                                         <Stack spacing={2} direction="row" sx={{ justifyContent: "start", mt: 2 }}>
-                                            <Typography sx={{ color: 'text.secondary', mt: 1, fontSize: 40, fontWeight: 700 }}> <Icon color="error" fontSize="inherit">pending_actions</Icon> 6 </Typography>
+                                            {pending
+                                                ? <CircularProgress/>
+                                                :<Typography sx={{ color: 'text.secondary', mt: 1, fontSize: 40, fontWeight: 700 }}> <Icon color="success" fontSize="inherit">task</Icon> {aprobados} </Typography>
+                                            }
                                         </Stack>
                                     </CardContent>
                                 </Card>
@@ -57,40 +108,29 @@ export const DashboardPage = () => {
                             <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}>
                                 <Card sx={{ width: "100%" }}>
                                     <CardContent>
-                                        <Typography sx={{ fontWeight: 600, fontSize: 20 }}>Pedidos Finalizados</Typography>
+                                        <Typography sx={{ fontWeight: 600, fontSize: 20 }}>Pedidos Rechazados</Typography>
                                         <Stack spacing={2} direction="row" sx={{ justifyContent: "start", mt: 2 }}>
-                                            <Typography sx={{ color: 'text.secondary', mt: 0, fontSize: 40, fontWeight: 700 }}> <Icon color="success" fontSize="inherit">fact_check</Icon>  7 </Typography>
+
+                                            {pending
+                                                ? <CircularProgress />
+                                                : <Typography sx={{ color: 'text.secondary', mt: 0, fontSize: 40, fontWeight: 700 }}> <Icon color="error" fontSize="inherit">content_paste_off</Icon>  {rechazados} </Typography>
+                                                
+                                            }
+
+
                                         </Stack>
                                     </CardContent>
                                 </Card>
                             </motion.div>
                         </Grid>
                     </Grid>
-
-                    <Grid container spacing={3} sx={{mt:5}}>
-                        <Grid size={{ xs: 12, sm: 6 }} >
-                            <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ duration: 0.5 }}>
-                                <Typography sx={{ fontWeight: 600, fontSize: 20 }}>Pedidos</Typography>
-                                <Skeleton
-                                sx={{ bgcolor: 'grey.900' }}
-                                variant="rounded"
-                                height={400}
-                                />
-                            </motion.div>
-                        </Grid>
-
                     
-                        <Grid  size={{ xs: 12, sm: 6 }} >
-                            <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ duration: 0.6 }}>
-                                <Typography sx={{ fontWeight: 600, fontSize: 20 }}>Estatus</Typography>
-                                <Skeleton
-                                    sx={{ bgcolor: 'grey.900' }}
-                                    variant="rounded"
-                                    height={400}
-                                    />
-                            </motion.div>
-                        </Grid>
+                    <Grid container spacing={3} sx={{mt:5}}>
+                        <Typography variant='h3' fontWeight='bold'>Bienvenido: {user?.Usuarios}</Typography>
                     </Grid>
+                    <Box display="flex" width="100%" justifyContent="center" alignItems="center" gap={1} mt={10}>
+                        <Typography variant="h1" fontWeight="600">{timeText}</Typography>
+                    </Box>
                 </Box>
 
             ) : (

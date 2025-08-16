@@ -6,7 +6,7 @@ export const lightTheme = createTheme({
     mode: 'light',
     text: {
       primary: '#000000',
-      secondary: '#0d47a1',
+      secondary: '#083c6b',
       disabled: '#6B7280',
     },
     primary: {
@@ -21,7 +21,7 @@ export const lightTheme = createTheme({
       main: '#4caf50',
     },
     info: {
-      main: '#1E3A8A',
+      main: '#083c6b',
     },
     warning: {
       main: '#ffeb3b',
@@ -255,11 +255,11 @@ export const lightTheme = createTheme({
           padding: "8px",
           marginInline: "8px",
           '&.Mui-selected': {
-            backgroundColor: '#234596',
+            backgroundColor: '#083c6b',
             color: '#ffffff',             
           },
           '&.Mui-selected:hover': {
-            backgroundColor: '#234596', 
+            backgroundColor: '#083c6b', 
           },
           '&:hover': {
             backgroundColor: '#f0f0f0', 
@@ -274,7 +274,7 @@ export const lightTheme = createTheme({
       root: {
         color: "inherit",
         ".Mui-selected &": {
-          color: '#234596', 
+          color: '#083c6b', 
         },
       },
     },

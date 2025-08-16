@@ -11,6 +11,12 @@ export const errorAxiosIntersector = (error: AxiosError) => {
         enqueueSnackbar(data.detail, { variant: 'warning' });
 
     }
+    if (error.response && error.response.status === 400) {
+          
+        const data: any = error.response.data;
+         enqueueSnackbar(data.detail, { variant: "error" });
+    }
+
     if (error.response && error.response.status === 401) {
         navigate("/login");
     }

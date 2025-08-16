@@ -11,17 +11,17 @@ export function useUser(token: string): Array<IUser> {
         // Transformamos los datos decodificados en el formato esperado
         const id = decoded.id;
         const Usuarios = decoded.Usuarios;
-        const role = decoded.role;
         const RoleName = decoded.RoleName;
         const email = decoded.email;
-        const dirreccion = decoded.dirreccion;
         const phone = decoded.phone;
+        const role = decoded.role;
+        const dirreccion = decoded.dirreccion
         const exp = typeof decoded.exp === "number"
             ?  Number(new Date(decoded.exp * 1000))
             : 0;
         // const sda = exp > Date.now();
 
-        return [{ id, email, dirreccion, exp,phone,role,RoleName,Usuarios }];
+        return [{ id,RoleName, role, exp, dirreccion,email, phone,Usuarios }];
 
 
     } catch (error) {

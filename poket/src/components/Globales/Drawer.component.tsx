@@ -1,6 +1,6 @@
 import { Box, List, ListItem, ListItemText, ListItemButton, ListItemIcon, Collapse, Divider, Avatar } from "@mui/material"
 import { ExpandLess, ExpandMore } from "@mui/icons-material"
-import logoGs from "../../assets/logo.svg";
+import logoGs from "../../assets/logoCorrea.png";
 import HomeIconSvg from "../../assets/icons/SlideBar/Home.svg";
 import LogOutIconSvg from "../../assets/icons/SlideBar/LogOut.svg";
 import InfoSvg from "../../assets/icons/SlideBar/info.svg";
@@ -31,13 +31,12 @@ const DrawerComponent: React.FC = () => {
     
     const handleClick = () => {
         setOpen(!open);
-    }
-
+    };
     return (
      <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
             <Box sx={{ flexGrow: 1, overflow: "auto" }}>
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 2, mt:1 }}>
-                    <img src={logoGs} alt="Grupo Sánchez" style={{ maxWidth: '100%', height: 'auto' }} />
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 1, mt:0 }}>
+                    <img src={logoGs} alt="Grupo Sánchez" style={{ maxWidth: '95%', height: 'auto' }} />
                 </Box>
                 <List sx={{mt:2}}>
                     <ListItem disablePadding sx={{mb:2}}>

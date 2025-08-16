@@ -28,3 +28,4 @@ export interface IProductListService {
     totalRecords: number,
     totalPages: number,
 }
+

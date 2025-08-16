@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { TextField, Button, Box, Typography, Paper, FormControl, InputAdornment, IconButton, FilledInput, CircularProgress } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import logo from "../assets/logo.svg";
+import logo from "../assets/logoCorrea.png";
 import { Navigate } from 'react-router';
 import { loginUserService } from '../services/auth.services';
 import Visibility from '@mui/icons-material/Visibility';
@@ -47,9 +47,8 @@ export function LoginPage() {
 
     } catch (error: any) {
 
-      console.error("Login failed:", error);
       const errorMsj = error.response?.data?.detail 
-      enqueueSnackbar(errorMsj || 'Error desconocido', { variant: 'error' });
+      enqueueSnackbar(errorMsj || 'Usuario o contraseña incorrectos', { variant: 'error' });
 
     } finally {
       
@@ -76,7 +75,7 @@ export function LoginPage() {
             <img 
               src={logo} 
               alt="Grupo Sánchez" 
-              style={{ height: 'auto', width: '40%', maxWidth: '300px',minWidth: '200px'}} 
+              style={{ height: 'auto', width: '40%', maxWidth: '350px',minWidth: '200px'}} 
             />
           </Box>
             <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 650, bgcolor: 'grey.200', borderRadius: 4 }}>
@@ -91,13 +90,13 @@ export function LoginPage() {
 
 
                 <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: 15 }}>
-                  Ingresa tu correo electrónico
+                  Ingresa tu usuario
                 </Typography>
                 <TextField
                   required
                   fullWidth
                   name="email"
-                  placeholder="Email"
+                  placeholder="Usuario"
                   type="text"
                   variant="outlined"
                   size="small"
