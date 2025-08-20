@@ -33,3 +33,7 @@ export interface IResponseCreateAddress{
     success: boolean,
     direccion_id: number
 }
+export interface IResponseCreateCliente{
+    success: boolean,
+    cliente_id: number
+}

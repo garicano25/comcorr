@@ -62,6 +62,8 @@ export function CrearPedidoPage() {
     const [loadAddress, setLoadAddress] = useState(false);
     const [saveAddress, setSaveAddress] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
+    const [comentario, setComentario] = useState<string>("")
+    const totalGeneral = productosAgregados.reduce((acc, row) => acc + (Number(row.precio_unitario) * Number(row.cantidad)), 0);
 
 
 
@@ -167,7 +169,6 @@ export function CrearPedidoPage() {
         });
     }
 
-
      const showAlert = () => {
         setAlert({
             title: '¿Está seguro de crear este pedido?',
@@ -201,6 +202,7 @@ export function CrearPedidoPage() {
                 const payload: IPayloadPedido = {
                     direccion_id: addresId ,
                     cliente_id: clienteSeleccionado?.id,
+                    comentarios: comentario,
                     articulos: productosAgregados.map(prod => ({
                         articulo_id: prod.articulo_id,
                         cantidad: prod.cantidad,
@@ -243,22 +245,32 @@ export function CrearPedidoPage() {
     //Funcion para Calcular el Total
     const handleTotalChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
-  
+        const maxStock = Number(productoSeleccionado?.existencia) || 0;
+
         if (value === '') {
             setCantidad(null);
             setTotal(null);
         } else {
-            const numValue = Number(value);
+            let numValue = Number(value);
+
+            // Limitar al máximo stock
+            if (numValue > maxStock) {
+                numValue = maxStock; 
+            } else if (numValue < 0) {
+                numValue = 0; 
+            }
+
             setCantidad(numValue);
-            
-            // Calcular el total
+
+            // Calcular total
             if (precio) {
-                setTotal(numValue * Number(precio));
+                setTotal(Number((numValue * Number(precio)).toFixed(2)));
             } else {
                 setTotal(null);
             }
         }
     };
+
 
     //Funcion para agregar el Producto de manera local
     const addProduct = () => {
@@ -326,7 +338,7 @@ export function CrearPedidoPage() {
     const loadClientes = async (inputValue : string) => {
         try {
             
-            const data: IDataClientes = await getClientes(50, inputValue?.trim() || '');
+            const data: IDataClientes = await getClientes(1,100, inputValue?.trim() || '');
             const options = data.clientes.map((cliente) => ({
                 value: cliente.id,
                 label: cliente.razon_social,
@@ -664,6 +676,27 @@ export function CrearPedidoPage() {
                                                     />
                                                 </Box>
                                                 <Box sx={{ maxWidth: 320, width: 320 }}>
+                                                    <Button
+                                                        type="submit"
+                                                        fullWidth
+                                                        color="error"
+                                                        variant="contained"
+                                                        disabled={!productoSeleccionado}
+                                                        onClick={addProduct}    
+                                                        sx={{
+                                                            color: "white",
+                                                            fontWeight: "bold",
+                                                            borderRadius: 2,
+                                                            marginTop:3,
+                                                            width: { xs: "100%", sm: "auto" },
+                                                        }}>
+                                                        <Icon>add</Icon> Agregar producto
+                                                    </Button>
+                                                </Box>
+                                                    
+                                            </Box>    
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                                                <Box sx={{ maxWidth: 320, width: 320 }}>
                                                     <Typography sx={{fontWeight: 'bold', fontSize: '15px'}}>Total</Typography>
                                                     <TextField
                                                         fullWidth
@@ -715,6 +748,20 @@ export function CrearPedidoPage() {
                                     pageSizeOptions={[10, 25, 50, 100]}
                                     loading={false}
                                     localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                                    slots={{
+                                        footer: () => (
+                                            <Box
+                                                display="flex"
+                                                justifyContent="center"
+                                                alignItems="center"
+                                                p={1}
+                                                sx={{bgcolor: '#f1c75eff' }}>
+                                                <Typography variant="subtitle1" fontWeight="bold">
+                                                    Subtotal general: {totalGeneral.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+                                                </Typography>
+                                            </Box>
+                                        ),
+                                    }} 
                                 />
                             </Box>
                         </Grid>
@@ -854,6 +901,8 @@ export function CrearPedidoPage() {
                                         <Typography sx={{ fontWeight: 'bold', fontSize: '15px', marginTop:'25px' }}>Comentario</Typography>
                                         <TextField
                                             fullWidth
+                                            value={comentario} 
+                                            onChange={(e) => setComentario(e.target.value)}
                                             required
                                             name="comentario"
                                             type="text"
@@ -978,7 +1027,7 @@ export function CrearPedidoPage() {
 
                                     <Typography sx={{ fontWeight: 'bold' }}>{ getTimeNow() }</Typography>
                                 </Box>
-                                {/* Fecha */}
+                                {/* Cliente */}
                                 <Box display="flex" alignItems="center" justifyContent="space-between">
                                     <Typography  display="flex" alignItems="center" gap={0.5}>
                                         <Icon color="success">diversity_3</Icon>
@@ -986,6 +1035,13 @@ export function CrearPedidoPage() {
                                     </Typography>
 
                                         <Typography sx={{ fontWeight: 'bold' }}>{ clienteSeleccionado?.razon_social }</Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" justifyContent="space-between">
+                                    <Typography  display="flex" alignItems="center" gap={0.5}>
+                                        <Icon color="success">comment</Icon>
+                                        Comentario:
+                                    </Typography>
+                                    <Typography sx={{ fontWeight: 'bold' }}>{ comentario || "Sin comentarios" }</Typography>
                                 </Box>
      
                             </Box>  
@@ -1077,25 +1133,6 @@ export function CrearPedidoPage() {
             {/* Botones de agregar producto y siguiente */}
             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ duration: 0.4 }}>
                 <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" },  justifyContent: "center", alignItems: "center", mt: 5, gap: 2,mb: 5,flexWrap: "wrap" }}>
-                    {activeStep === 0 && (
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            disabled={!productoSeleccionado}
-                            onClick={addProduct}    
-                            sx={{
-                            bgcolor: "grey.500",
-                            "&:hover": { bgcolor: "grey.600" },
-                            color: "white",
-                            fontWeight: "bold",
-                            borderRadius: 2,
-                            width: { xs: "100%", sm: "auto" },
-                            }}
-                        >
-                            <Icon>add</Icon> Agregar producto
-                        </Button>
-                    )}
 
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, width: { xs: "100%", sm: "auto" } }}>
 

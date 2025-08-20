@@ -10,6 +10,7 @@ import { ListarPedidoPage } from "./Pages/Pedidos/ListarPedido.page"
 import { CotizacionPage } from "./Pages/Cotizacion/Cotizacion.page"
 import { ConsultarPedidoPage } from "./Pages/Pedidos/ConsultarPedido.page"
 import { ProductosPage } from "./Pages/Productos/Productos.pge"
+import { ClientesPage } from "./Pages/Clientes/Clientes.page"
 
 export const WebRoutes = () => {
     return (
@@ -24,6 +25,9 @@ export const WebRoutes = () => {
 
                 {/* Cotizacion */}
                 <Route path="cotizacion" element={<CotizacionPage />} />
+
+                {/* Clientes */}
+                <Route path="clientes" element={<ClientesPage />} />
 
                 {/* Pedidos */}
                 <Route path="crear-pedido" element={<CrearPedidoPage />} />

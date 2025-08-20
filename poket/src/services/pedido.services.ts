@@ -1,6 +1,6 @@
 import { AxiosResponse } from "axios";
 import { clientAdmin } from "../interceptors/axios.client";
-import { IPayloadPedido, IResponseCreatePedido, IResponseEstatusPedido, IResponseGetPedidos, IResponseInfoPedido } from "../interfaces/pedidos.interface";
+import { IPayloadPedido, IResponseCreatePedido, IResponseEstatusPedido, IResponseGetPedidos, IResponseInfoPedido, IResponseSendEmail } from "../interfaces/pedidos.interface";
 
 
 //Create Pedido
@@ -21,11 +21,11 @@ export const createPedidoService = (data: IPayloadPedido) => {
 
 
 // Tabla de pedidos
-export const listPedidos = () => {
+export const listPedidos = (page : number, limit:number) => {
     return new Promise<IResponseGetPedidos>( async (resolve, reject) => {
       try {
 
-        const response: AxiosResponse = await clientAdmin.get('/pedidos')
+        const response: AxiosResponse = await clientAdmin.get('/pedidos', {params: {page, limit}})
         resolve(response.data);
 
       } catch (e) {
@@ -107,3 +107,50 @@ export const changeStatusArtService = (articulo_id: number, estado:string, pedid
   });
     
 };
+
+// Send Email Service
+export const sendEmailService = ({ idPedido }: { idPedido: number }) => {
+  return new Promise<IResponseSendEmail>(async (resolve, reject) => {
+    try {
+      const response: AxiosResponse = await clientAdmin.post(`/correo`, {pedido_id:idPedido});
+      resolve(response.data);
+
+    } catch (e) {
+      
+      reject(e);
+    }
+  });
+};
+
+
+// Update Price Art
+export const sendUpdatePriceArt = (data:  { articulo_id: number, precio: number }, idPedido : number) => {
+  return new Promise<IResponseSendEmail>(async (resolve, reject) => {
+    try {
+
+      const response: AxiosResponse = await clientAdmin.post(`/pedidos/${idPedido}/articulos`, data);
+      resolve(response.data);
+
+    } catch (e) {
+      
+      reject(e);
+    }
+  });
+};
+
+// Update Comment Pedido
+export const sendUpdateCommentService = (data:  { comentarios: string }, idPedido : number) => {
+  return new Promise<IResponseSendEmail>(async (resolve, reject) => {
+    try {
+
+      const response: AxiosResponse = await clientAdmin.post(`/pedidos/${idPedido}/articulos`, data);
+      resolve(response.data);
+
+    } catch (e) {
+      
+      reject(e);
+    }
+  });
+};
+
+

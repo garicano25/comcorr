@@ -29,7 +29,7 @@ export const DashboardPage = () => {
         setPending(true);
         try {
 
-            const data = await listPedidos();
+            const data = await listPedidos(1, 1000);
             
             if (data && data.pedidos) {
                 // total pedidos

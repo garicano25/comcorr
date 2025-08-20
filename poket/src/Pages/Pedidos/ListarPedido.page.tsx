@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useParamsRoute } from "../../context/ParamsRouteContext";
 import { Box, Button, Chip, Icon, Menu, MenuItem, Tooltip, useMediaQuery, useTheme, Zoom } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales";
 import { IListPedidos, IResponseEstatusPedido, IResponseInfoPedido } from "../../interfaces/pedidos.interface";
 import { aprovePedidoService, declinePedidoService, getInfoPedido, listPedidos } from "../../services/pedido.services";
@@ -11,7 +11,7 @@ import { decodeToken } from "../../utils/options.token";
 import { IUser } from "../../interfaces/user.interface";
 import React from "react";
 import { useSnackbar } from "notistack";
-
+import { formatDate } from "../../utils/function.global";
 
 export function ListarPedidoPage() {
 
@@ -25,18 +25,24 @@ export function ListarPedidoPage() {
     const { enqueueSnackbar } = useSnackbar();
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [selectedRow, setSelectedRow] = useState<any>(null);
-
+     const [rowCount, setRowCount] = useState<number>(0);
+    const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+        page: 0,
+        pageSize: 10,
+    });
+    
     const open = Boolean(anchorEl)
+    const token : IUser | null = decodeToken();
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>, row: any) => {
         setAnchorEl(event.currentTarget);
         setSelectedRow(row);
     };
+
     const handleClose = () => {
         setAnchorEl(null);
     };
 
-    const token : IUser | null = decodeToken();
     
     const useIsMobile = () => {
         const theme = useTheme();
@@ -132,7 +138,6 @@ export function ListarPedidoPage() {
 
     
     const isMobile = useIsMobile();
-    const paginationModel = { page: 0, pageSize: 10 };
     const columns: GridColDef[] = [
         {
             headerName: 'No. Pedido',
@@ -153,10 +158,17 @@ export function ListarPedidoPage() {
         {
             headerName: 'Fecha de solicitud',
             field: 'fecha_creacion',
-            type: 'date',
-            flex: 2,
+            type: 'string',
+            flex: 1,
             headerClassName: '--header-table',
-            valueFormatter: (params: { value: string }) => params.value,
+            renderCell: (params) => formatDate(params.value)
+        },
+          {
+            headerName: 'Creado por',
+            field: 'Creado_por',
+            type: 'string',
+            flex: 1,
+            headerClassName: '--header-table',
         },
         {
             headerName: 'Estatus',
@@ -173,7 +185,7 @@ export function ListarPedidoPage() {
                     label={capitalize(params.value)}
                     color={
                         params.value === 'aceptado' ? 'success' :
-                        params.value === 'en proceso' ? 'primary' :
+                        params.value === 'en proceso' ? 'warning' :
                         params.value === 'rechazado' ? 'error' :
                         'default'
                     }
@@ -201,8 +213,8 @@ export function ListarPedidoPage() {
                         variant="text"
                     >
                         {params.row.estado === 'aceptado'
-                            ? <><Icon>check_circle</Icon> Aprobado</>
-                            : params.row.estado === 'rechazado' ?<> <Icon>cancel</Icon> Rechazado </>  : <><Icon>menu</Icon></>}  
+                            ? <><Icon>check_circle</Icon></>
+                            : params.row.estado === 'rechazado' ?<> <Icon>cancel</Icon></>  : <><Icon>menu</Icon></>}  
                     </Button>
                     <Menu
                         id="basic-menu"
@@ -248,7 +260,7 @@ export function ListarPedidoPage() {
                         onClick={() => verDetallesPedido(params.row.id)}
                         sx={{ color: 'black', ml: 1, boxShadow: 'none' }}
                     >
-                        <Icon>description</Icon> Detalles
+                        <Icon>description</Icon> 
                     </Button>
                 </Tooltip>
                 
@@ -267,8 +279,9 @@ export function ListarPedidoPage() {
         setPending(true);
         try {
 
-            const data = await listPedidos();
+            const data = await listPedidos(paginationModel.page + 1, paginationModel.pageSize);
             setRows(data.pedidos);
+            setRowCount(data.totalRecords);
 
         } finally {
             setPending(false);
@@ -359,19 +372,19 @@ export function ListarPedidoPage() {
 
     // Obtencios de la información del pedido por idPedido
    const loadInfoPedido = async (idPedido: number) => {
-    try {
-        const response: IResponseInfoPedido = await getInfoPedido({ idPedido: Number(idPedido) });
+        try {
+            const response: IResponseInfoPedido = await getInfoPedido({ idPedido: Number(idPedido) });
 
-        const porAprobar = hasPendienteConAprobacion(response.articulos);
+            const porAprobar = hasPendienteConAprobacion(response.articulos);
 
-        return porAprobar;
+            return porAprobar;
 
-    } catch (error) {
-        console.log('Error al consultar la informacion del pedido: ' + error);
-        enqueueSnackbar("Hubo un error al intentar consultar los articulos del pedido, intente nuevamente.", { variant: 'error' });
-        return false;
-    }
-};
+        } catch (error) {
+            console.log('Error al consultar la informacion del pedido: ' + error);
+            enqueueSnackbar("Hubo un error al intentar consultar los articulos del pedido, intente nuevamente.", { variant: 'error' });
+            return false;
+        }
+    };
 
     
     useEffect(() => {
@@ -383,7 +396,7 @@ export function ListarPedidoPage() {
             acciones: true,
             id: true,
         });
-    }, [isMobile]);
+    }, [isMobile, paginationModel]);
 
 
     return (
@@ -397,15 +410,16 @@ export function ListarPedidoPage() {
         }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <DataGrid
-                rows={rows}
-                columns={columns}
-                disableColumnResize={false}
-                initialState={{ pagination: { paginationModel } }}
-                pageSizeOptions={[10, 25, 50, 100]}
-                loading={pending}
-                localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-                columnVisibilityModel={columnVisibilityModel}
-                onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel)}
+                    rows={rows}
+                    columns={columns}
+                    loading={pending}
+                    paginationMode="server" // 👈 importante
+                    rowCount={rowCount}
+                    paginationModel={paginationModel}
+                    onPaginationModelChange={setPaginationModel}
+                    pageSizeOptions={[10, 25, 50, 100]}
+                    localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                    columnVisibilityModel={columnVisibilityModel}
                 />
                 
             </div>

@@ -36,6 +36,7 @@ export function headerTitles(key: string) : JSX.Element{
 
 export const headerTitlesList: { [key: string]: JSX.Element } = {
     "/cotizacion": <Typography variant="h4" color="text.primary" sx={{fontWeight: 600}}> Cotizaciones</ Typography >,
+    "/clientes": <Typography variant="h4" color="text.primary" sx={{fontWeight: 600}}> Clientes</ Typography >,
     "/productos": <Typography variant="h4" color="text.primary" sx={{fontWeight: 600}}> Productos</ Typography >,
     "/crear-pedido": <Typography variant="h4" color="text.primary" sx={{fontWeight: 600}}> Levantar Pedido </Typography>,
     "/consultar-pedido": <Typography variant="h4" color="text.primary" sx={{fontWeight: 600}}> Gestión de Pedidos </Typography>,

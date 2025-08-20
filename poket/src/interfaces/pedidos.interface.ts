@@ -29,6 +29,7 @@ export interface IPayloadProductos {
 export interface IPayloadPedido {
     direccion_id: number,
     cliente_id: number,
+    comentarios:string
     articulos: IPayloadProductos[]
 }
 
@@ -41,6 +42,7 @@ export interface IResponseCreatePedido {
 
 // Interfaces Lista de Pedidos
 export interface IListPedidos {
+  Creado_por: string;
   id: number;
   usuario_id: number;
   direccion_id: number;
@@ -52,6 +54,7 @@ export interface IListPedidos {
   fecha_aprobacion: string;
   cliente_nombre: string;
   cliente_clave: string;
+  comentarios?: string;
   cliente_telefono?: string;
 }
 
@@ -87,4 +90,8 @@ export interface IArticulosPedido {
 export interface IResponseInfoPedido {
     pedido: IListPedidos
     articulos: IArticulosPedido[]
+}
+
+export interface IResponseSendEmail {
+  success: boolean
 }

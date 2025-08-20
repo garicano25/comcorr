@@ -5,6 +5,7 @@ import HomeIconSvg from "../../assets/icons/SlideBar/Home.svg";
 import LogOutIconSvg from "../../assets/icons/SlideBar/LogOut.svg";
 import InfoSvg from "../../assets/icons/SlideBar/info.svg";
 import DocsSvg from "../../assets/icons/SlideBar/Doc.svg";
+import ClientesSvg from "../../assets/icons/SlideBar/User.svg";
 import CreateFolioSvg from "../../assets/icons/SlideBar/CreateFolio.svg";
 import BaseSvg from "../../assets/icons/SlideBar/Base.svg";
 import { useLocation, useNavigate } from "react-router"
@@ -61,6 +62,14 @@ const DrawerComponent: React.FC = () => {
                                 <img src={DocsSvg} alt="Icon Cotizaciones" style={{ maxWidth: '100%', height: 'auto', filter: route === '/cotizacion' ? 'invert(1)' : 'none' }} />
                             </ListItemIcon>
                             <ListItemText secondary="Cotizaciones" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{mb:2}}>
+                        <ListItemButton onClick={() => navigate('/clientes')} selected={route === '/clientes'}>
+                            <ListItemIcon>
+                                <img src={ClientesSvg} alt="Icon Clientes" style={{ maxWidth: '100%', height: 'auto', filter: route === '/clientes' ? 'invert(1)' : 'none' }} />
+                            </ListItemIcon>
+                            <ListItemText secondary="Clientes" />
                         </ListItemButton>
                     </ListItem>
                     {/* START:LIST PEDIDOS */}
