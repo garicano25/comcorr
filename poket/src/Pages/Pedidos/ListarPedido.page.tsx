@@ -143,7 +143,7 @@ export function ListarPedidoPage() {
             headerName: 'No. Pedido',
             field: 'id',
             type: 'number',
-            flex: 1,
+            width: 140,
             align: 'center',
             headerAlign: 'center',
             headerClassName: '--header-table',
@@ -152,14 +152,14 @@ export function ListarPedidoPage() {
             headerName: 'Cliente',
             field: 'cliente_nombre',
             type: 'string',
-            flex: 2,
+            ...(!isMobile ? { flex: 2 } : { width: 350 }),
             headerClassName: '--header-table',
         },
         {
             headerName: 'Fecha de solicitud',
             field: 'fecha_creacion',
             type: 'string',
-            flex: 1,
+            width: 200,
             headerClassName: '--header-table',
             renderCell: (params) => formatDate(params.value)
         },
@@ -167,7 +167,7 @@ export function ListarPedidoPage() {
             headerName: 'Creado por',
             field: 'Creado_por',
             type: 'string',
-            flex: 1,
+            width: 150,
             headerClassName: '--header-table',
         },
         {
@@ -176,7 +176,7 @@ export function ListarPedidoPage() {
             type: 'singleSelect',
             valueOptions: ["aceptado","en proceso" ,"rechazado"],
             editable: true,
-            flex: 1,
+            width: 180,
             headerClassName: '--header-table',
             align: 'center',
             headerAlign: 'center',
@@ -197,7 +197,7 @@ export function ListarPedidoPage() {
             field: 'Pedido',
             disableColumnMenu: true,
             sortable: false,
-            flex: 1,
+            ...(!isMobile ? { flex: 1 } : { width: 100 }),
             align: 'center',
             headerAlign: 'center',
             headerClassName: '--header-table',
@@ -249,7 +249,7 @@ export function ListarPedidoPage() {
             field: 'acciones',
             disableColumnMenu: true,
             sortable: false,
-            flex: 1,
+            ...(!isMobile ? { flex: 1 } : { width: 100 }),
             align: 'center',
             headerAlign: 'center',
             headerClassName: '--header-table',
@@ -390,11 +390,12 @@ export function ListarPedidoPage() {
     useEffect(() => {
         getPedidos();
         setColumnVisibilityModel({
-            cliente_nombre: !isMobile,
+            id: true,
+            cliente_nombre: true,
+            Creado_por: true,
             fecha_creacion: !isMobile,
             estado: true,
             acciones: true,
-            id: true,
         });
     }, [isMobile, paginationModel]);
 
@@ -403,6 +404,7 @@ export function ListarPedidoPage() {
         <Box component="div" sx={{
             mt: 5,
             width: '100%',
+            overflowX: 'auto',
             '& .--header-table': {
                 backgroundColor: 'primary.main',
                 fontWeight: 900
@@ -413,7 +415,7 @@ export function ListarPedidoPage() {
                     rows={rows}
                     columns={columns}
                     loading={pending}
-                    paginationMode="server" // 👈 importante
+                    paginationMode="server"
                     rowCount={rowCount}
                     paginationModel={paginationModel}
                     onPaginationModelChange={setPaginationModel}

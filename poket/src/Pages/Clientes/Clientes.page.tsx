@@ -53,7 +53,7 @@ export function ClientesPage() {
             headerName: 'ID',
             field: 'id',
             type: 'number',
-            flex: 1,
+            width: 150,
             align: 'center',
             headerAlign: 'center',
             headerClassName: '--header-table',
@@ -62,14 +62,14 @@ export function ClientesPage() {
             headerName: 'Razón social',
             field: 'razon_social',
             type: 'string',
-            flex: 1,
+            ...(!isMobile ? { flex: 1 } : { width: 350 }),
             headerClassName: '--header-table',
         },
         {
             headerName: 'Dirección',
             field: 'direccion',
             type: 'string',
-            flex: 1,
+            ...(!isMobile ? { flex: 1 } : { width: 550 }),
             headerClassName: '--header-table',
         },
         {
@@ -77,7 +77,7 @@ export function ClientesPage() {
             field: 'acciones',
             disableColumnMenu: true,
             sortable: false,
-            flex: 1,
+            ...(!isMobile ? { flex: 1 } : { width: 150 }),
             align: 'center',
             headerAlign: 'center',
             headerClassName: '--header-table',
@@ -190,6 +190,7 @@ export function ClientesPage() {
         <Box component="div" sx={{
             mt: 5,
             width: '100%',
+            overflowX: 'auto',
             '& .--header-table': {
                 backgroundColor: 'primary.main',
                 fontWeight: 900
@@ -213,21 +214,19 @@ export function ClientesPage() {
 
 
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <DataGrid
-                    rows={rows}
-                    columns={columns}
-                    loading={pending}
-                    paginationMode="server"
-                    rowCount={rowCount}
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={setPaginationModel}
-                    pageSizeOptions={[10, 25, 50, 100]}
-                    localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-                    columnVisibilityModel={columnVisibilityModel}
-                />
+            <DataGrid
+                rows={rows}
+                columns={columns}
+                loading={pending}
+                paginationMode="server"
+                rowCount={rowCount}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                pageSizeOptions={[10, 25, 50, 100]}
+                localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                columnVisibilityModel={columnVisibilityModel}
+            />
                 
-            </div>
 
             {/* Modal Create Client */}
             <Modal

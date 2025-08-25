@@ -6,6 +6,7 @@ import AsyncSelect from "react-select/async";
 import { getProducts } from "../../services/productos.services";
 import { ProductCard } from "../../components/Globales/ProductCardComponent";
 import { Cached } from "@mui/icons-material";
+import { useDebounce } from "../../hooks/useDebonce";
 
 export const ProductosPage = () => {
     const [loading, setLoading] = useState(false);
@@ -20,16 +21,30 @@ export const ProductosPage = () => {
     const [search, setSearch] = useState<string>("");
     const [limit, setLimit] = useState<number>(20);
 
+    //  Buscador
+    const [inputValue, setInputValue] = useState("");
+    const debouncedSearch = useDebounce(inputValue, 500); // espera 2 segundos
+
     useEffect(() => {
         getProductsService();
     }, []);
+
+    // Cada vez que cambie el debouncedSearch lanza búsqueda
+    useEffect(() => {
+        if (debouncedSearch.trim()) {
+            searchProducts(debouncedSearch);
+        } else {
+            // si borra el input, recarga los productos originales
+            getProductsService(limit);
+        }
+    }, [debouncedSearch]);
 
     const getProductsService = async (customLimit?: number) => {
         setLoading(true);
         try {
             const data: IProductListService = await getProducts(customLimit ?? limit, search);
             setProductos(data.articulos);
-            setAllProductos(data.articulos); 
+            setAllProductos(data.articulos);
             setData(data);
 
             const uniqueMarcas = Array.from(new Set(data.articulos.map(p => p.marca).filter(Boolean)));
@@ -39,6 +54,20 @@ export const ProductosPage = () => {
             setLineas(uniqueLineas);
         } catch (error) {
             console.error("Error fetching products:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const searchProducts = async (query: string) => {
+        setLoading(true);
+        try {
+            const data: IProductListService = await getProducts(limit, query);
+            setProductos(data.articulos);
+            setAllProductos(data.articulos);
+            setData(data);
+        } catch (error) {
+            console.error("Error buscando productos:", error);
         } finally {
             setLoading(false);
         }
@@ -55,21 +84,6 @@ export const ProductosPage = () => {
             setProductoSeleccionado(option.producto);
         } else {
             setProductoSeleccionado(null);
-        }
-    };
-
-    const loadOptions = async (inputValue: string) => {
-        if (!inputValue.trim()) return [];
-        try {
-            const data: IProductListService = await getProducts(limit, inputValue);
-            return data.articulos.map((producto) => ({
-                value: producto.codigo,
-                label: producto.descripcion,
-                producto,
-            }));
-        } catch (error) {
-            console.error("Error buscando productos:", error);
-            return [];
         }
     };
 
@@ -102,7 +116,7 @@ export const ProductosPage = () => {
                 </Box>
             ) : (
                 <Box>
-                    <Grid2 container spacing={2}   sx={{
+                    <Grid2 container spacing={2} sx={{
                         background: "#fff",
                         borderRadius: "10px",
                         border: "1px solid #e0e0e0",
@@ -111,9 +125,9 @@ export const ProductosPage = () => {
                         <Box sx={{ maxWidth: 500, width: 500 }}>
                             <AsyncSelect
                                 cacheOptions
-                                loadOptions={loadOptions}    
                                 defaultOptions={options}
                                 placeholder="Buscar..."
+                                onInputChange={(value) => setInputValue(value)} // 🔹 manejamos el texto
                                 onChange={handleSelectChange}
                                 isClearable
                                 noOptionsMessage={() => "No se encontraron resultados"}
@@ -203,10 +217,10 @@ export const ProductosPage = () => {
                             }}
                             color="primary"
                             variant="contained"
-                            sx={{mb:1}}    
+                            sx={{ mb: 1 }}
                         >
                             Cargar más productos
-                            </Button>
+                        </Button>
 
                         <Button
                             onClick={() => {
@@ -219,14 +233,12 @@ export const ProductosPage = () => {
                             }}
                             color="primary"
                             variant="contained"
-                            sx={{mb:1}}    
-                                
+                            sx={{ mb: 1 }}
                         >
                             Cargar Todos
                         </Button>
                     </Box>
                 </Box>
-                    
             )}
         </div>
     );

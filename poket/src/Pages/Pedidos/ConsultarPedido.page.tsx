@@ -10,6 +10,8 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
   Zoom,
 } from "@mui/material";
 import { IArticulosPedido, IListPedidos, IResponseEstatusPedido, IResponseInfoPedido, IResponseSendEmail } from "../../interfaces/pedidos.interface";
@@ -41,6 +43,7 @@ export function ConsultarPedidoPage() {
   const [comentario, setComentario] = useState<string>("")
   const totalGeneral = rows.reduce((acc, row) => acc + Number(row.total), 0);
   const [dataPedido, setDataPedido] = useState<IResponseInfoPedido>()
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
   
 
   // Modal New Price
@@ -131,15 +134,21 @@ export function ConsultarPedidoPage() {
 
   };
 
+  const useIsMobile = () => {
+      const theme = useTheme();
+      return useMediaQuery(theme.breakpoints.down('sm'));
+  };
 
   // ================ Tabla de productos ==================
-  const paginationModel = { page: 0, pageSize: 10 };
+  const paginationModel = { page: 0, pageSize: 100 };
+  const isMobile = useIsMobile();
+
   const columns: GridColDef[] = [
       
       {
           headerName: 'Art. ID',
           field: 'articulo_id',
-          flex: 1,
+          width: 120,
           type: 'string',
           align: 'center',
           headerAlign: 'center',
@@ -150,7 +159,7 @@ export function ConsultarPedidoPage() {
           field: 'descripcion',
           type: 'string',
           align: 'center',
-          flex: 2,
+          ...(!isMobile ? { flex: 1 } : { width: 350 }),
           headerClassName: '--header-table'
       },
       {
@@ -158,7 +167,7 @@ export function ConsultarPedidoPage() {
           field: 'precio_unitario',
           type: 'string',
           align: 'center',
-          flex: 1,
+          width: 130,
           headerAlign: 'center',
           headerClassName: '--header-table'
       },
@@ -167,7 +176,7 @@ export function ConsultarPedidoPage() {
           field: 'cantidad',
           type: 'number',
           align: 'center',
-          flex: 1,
+          width: 130,
           headerAlign: 'center',
           headerClassName: '--header-table'
       },
@@ -176,16 +185,16 @@ export function ConsultarPedidoPage() {
           field: 'total',
           type: 'string',
           align: 'center',
-          flex: 1,
+          width: 140,
           headerAlign: 'center',
           headerClassName: '--header-table'
     },
     {
       headerName: 'Precio convenido',
-      field: 'Precio convenido',
+      field: 'precio_convenido',
       disableColumnMenu: true,
       sortable: false,
-      flex: 1,
+      minWidth: 300,
       align: 'left',
       headerAlign: 'center',
       headerClassName: '--header-table',
@@ -402,7 +411,15 @@ export function ConsultarPedidoPage() {
   //Carga de la información al iniciar el componente
   useEffect(() => {
     loadInfoPedido();
-  }, []);
+    setColumnVisibilityModel({
+      cantidad: !isMobile,
+      total: !isMobile,
+      articulo_id: !isMobile,
+      descripcion: true,
+      precio_unitario: true,
+      precio_convenido: true,
+    });
+  }, [isMobile]);
 
 
   return (
@@ -480,7 +497,9 @@ export function ConsultarPedidoPage() {
           <Box component="div" sx={{
                 mt: 2,
                 mb: 5,
+                width: '95%',
                 maxWidth: '95%',
+                overflowX: 'auto',
                 '& .--header-table': {
                     backgroundColor: 'primary.main',
                     fontWeight: 900
@@ -493,6 +512,8 @@ export function ConsultarPedidoPage() {
                 initialState={{ pagination: { paginationModel } }}
                 pageSizeOptions={[10, 25, 50, 100]}
                 localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                columnVisibilityModel={columnVisibilityModel}  
+                disableColumnResize={false}
                 slots={{
                   footer: () => (
                     <Box
