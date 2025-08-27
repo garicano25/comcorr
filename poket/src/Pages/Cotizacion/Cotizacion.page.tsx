@@ -255,7 +255,7 @@ export function CotizacionPage() {
     //Funcion para Calcular el Total
     const handleTotalChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
-        const maxStock = Number(productoSeleccionado?.existencia) || 0;
+        // const maxStock = Number(productoSeleccionado?.existencia) || 0;
 
         if (value === '') {
             setCantidad(null);
@@ -264,11 +264,11 @@ export function CotizacionPage() {
             let numValue = Number(value);
 
             // Limitar al máximo stock
-            if (numValue > maxStock) {
-                numValue = maxStock; 
-            } else if (numValue < 0) {
-                numValue = 0; 
-            }
+            // if (numValue > maxStock) {
+            //     numValue = maxStock; 
+            // } else if (numValue < 0) {
+            //     numValue = 0; 
+            // }
 
             setCantidad(numValue);
 
@@ -690,7 +690,7 @@ export function CotizacionPage() {
                                                         fullWidth
                                                         color="error"
                                                         variant="contained"
-                                                        disabled={!productoSeleccionado}
+                                                        disabled={!productoSeleccionado || cantidad === null || precio === '' || productosAgregados.some(prod => prod.id === productoSeleccionado.id)}
                                                         onClick={addProduct}    
                                                         sx={{
                                                             color: "white",

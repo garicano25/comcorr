@@ -1,43 +1,23 @@
 import { useEffect, useState } from "react";
 import { IProductList, IProductListService } from "../../interfaces/productos.interface";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Box, Button, FormControl, Grid2, Icon, InputLabel, MenuItem, Select } from "@mui/material";
-import AsyncSelect from "react-select/async";
+import { Box, Button, Grid2, Icon, TextField } from "@mui/material";
 import { getProducts } from "../../services/productos.services";
 import { ProductCard } from "../../components/Globales/ProductCardComponent";
-import { Cached } from "@mui/icons-material";
-import { useDebounce } from "../../hooks/useDebonce";
+import { Search } from "@mui/icons-material";
 
 export const ProductosPage = () => {
     const [loading, setLoading] = useState(false);
     const [productos, setProductos] = useState<IProductList[]>([]);
     const [allProductos, setAllProductos] = useState<IProductList[]>([]);
-    const [marcas, setMarcas] = useState<string[]>([]);
-    const [lineas, setLineas] = useState<string[]>([]);
-    const [selectedMarca, setSelectedMarca] = useState<string>("");
-    const [selectedLinea, setSelectedLinea] = useState<string>("");
     const [productoSeleccionado, setProductoSeleccionado] = useState<IProductList | null>(null);
     const [data, setData] = useState<IProductListService>();
-    const [search, setSearch] = useState<string>("");
+    const [search, setSearch] = useState<string>(""); // 🔹 input del buscador
     const [limit, setLimit] = useState<number>(20);
-
-    //  Buscador
-    const [inputValue, setInputValue] = useState("");
-    const debouncedSearch = useDebounce(inputValue, 500); // espera 2 segundos
 
     useEffect(() => {
         getProductsService();
     }, []);
-
-    // Cada vez que cambie el debouncedSearch lanza búsqueda
-    useEffect(() => {
-        if (debouncedSearch.trim()) {
-            searchProducts(debouncedSearch);
-        } else {
-            // si borra el input, recarga los productos originales
-            getProductsService(limit);
-        }
-    }, [debouncedSearch]);
 
     const getProductsService = async (customLimit?: number) => {
         setLoading(true);
@@ -47,11 +27,6 @@ export const ProductosPage = () => {
             setAllProductos(data.articulos);
             setData(data);
 
-            const uniqueMarcas = Array.from(new Set(data.articulos.map(p => p.marca).filter(Boolean)));
-            setMarcas(uniqueMarcas);
-
-            const uniqueLineas = Array.from(new Set(data.articulos.map(p => p.linea).filter(Boolean)));
-            setLineas(uniqueLineas);
         } catch (error) {
             console.error("Error fetching products:", error);
         } finally {
@@ -59,10 +34,14 @@ export const ProductosPage = () => {
         }
     };
 
-    const searchProducts = async (query: string) => {
+    const searchProducts = async () => {
+        if (!search.trim()) {
+            getProductsService(limit); // si está vacío, vuelve a traer todos
+            return;
+        }
         setLoading(true);
         try {
-            const data: IProductListService = await getProducts(limit, query);
+            const data: IProductListService = await getProducts(limit, search);
             setProductos(data.articulos);
             setAllProductos(data.articulos);
             setData(data);
@@ -73,40 +52,20 @@ export const ProductosPage = () => {
         }
     };
 
-    const options = productos.map((producto) => ({
-        value: producto.codigo,
-        label: producto.descripcion,
-        producto
-    }));
-
-    const handleSelectChange = (option: any) => {
-        if (option?.producto) {
-            setProductoSeleccionado(option.producto);
-        } else {
-            setProductoSeleccionado(null);
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            searchProducts();
         }
     };
 
-    // Filtrar en memoria
+    // Filtrar en memoria (marca/linea)
     useEffect(() => {
         let filtered = allProductos;
-
-        if (selectedMarca) {
-            filtered = filtered.filter(p => p.marca === selectedMarca);
-        }
-        if (selectedLinea) {
-            filtered = filtered.filter(p => p.linea === selectedLinea);
-        }
-
+       
         setProductos(filtered);
-    }, [selectedMarca, selectedLinea, allProductos]);
+    }, [ allProductos]);
 
-    const emptyFilter = () => {
-        setSelectedMarca("");
-        setSelectedLinea("");
-        setProductos(allProductos);
-        setProductoSeleccionado(null);
-    };
 
     return (
         <div>
@@ -116,83 +75,44 @@ export const ProductosPage = () => {
                 </Box>
             ) : (
                 <Box>
+                    {/* 🔹 Buscador con TextField */}
                     <Grid2 container spacing={2} sx={{
                         background: "#fff",
                         borderRadius: "10px",
                         border: "1px solid #e0e0e0",
-                        padding: '10px 5px 15px'
+                        padding: '10px 5px 15px',
+                        width: '100%',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        display: 'flex',
                     }}>
-                        <Box sx={{ maxWidth: 500, width: 500 }}>
-                            <AsyncSelect
-                                cacheOptions
-                                defaultOptions={options}
-                                placeholder="Buscar..."
-                                onInputChange={(value) => setInputValue(value)} // 🔹 manejamos el texto
-                                onChange={handleSelectChange}
-                                isClearable
-                                noOptionsMessage={() => "No se encontraron resultados"}
-                                loadingMessage={() => "Cargando..."}
-                                styles={{
-                                    control: (baseStyles) => ({
-                                        ...baseStyles,
-                                        borderRadius: '15px',
-                                        marginTop: '8px',
-                                        padding: '2px 10px',
-                                    }),
-                                }}
+                        <Box sx={{ maxWidth: '100%', width: '50%', padding: '0 10px' }}>
+                            <TextField
+                                fullWidth
+                                placeholder="Buscar producto..."
+                                variant="outlined"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                sx={{ borderRadius: "15px", marginTop: "8px", border: "1px solid #000" }}
                             />
                         </Box>
-                        <Box sx={{ maxWidth: 350, width: 350 }}>
-                            <FormControl fullWidth>
-                                <InputLabel id="select-marca">Marca</InputLabel>
-                                <Select
-                                    labelId="select-marca"
-                                    value={selectedMarca}
-                                    onChange={(e) => setSelectedMarca(e.target.value)}
-                                    variant="outlined"
-                                >
-                                    <MenuItem value="">Todas</MenuItem>
-                                    {marcas.map((marca) => (
-                                        <MenuItem key={marca} value={marca}>
-                                            {marca}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box sx={{ maxWidth: 350, width: 350 }}>
-                            <FormControl fullWidth>
-                                <InputLabel id="select-linea">Línea</InputLabel>
-                                <Select
-                                    labelId="select-linea"
-                                    value={selectedLinea}
-                                    onChange={(e) => setSelectedLinea(e.target.value)}
-                                    variant="outlined"
-                                >
-                                    <MenuItem value="">Todas</MenuItem>
-                                    {lineas.map((linea) => (
-                                        <MenuItem key={linea} value={linea}>
-                                            {linea}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box sx={{ maxWidth: 200, width: 200, mt: 1 }}>
+                        <Box sx={{ maxWidth: '20%', width: '20%', mt: 1 }}>
                             <Button
-                                startIcon={<Cached />}
-                                onClick={emptyFilter}
+                                startIcon={<Search />}
+                                onClick={searchProducts}
                                 variant="contained"
                                 sx={{
                                     bgcolor: "primary.main",
                                     color: "white",
                                 }}
                             >
-                                Limpiar Filtros
+                                Buscar
                             </Button>
                         </Box>
                     </Grid2>
 
+                    {/* 🔹 Productos */}
                     <Grid2 container spacing={2} sx={{ marginTop: '10px', marginBottom: '30px', justifyContent: 'center' }}>
                         {productoSeleccionado ? (
                             <ProductCard producto={productoSeleccionado} />
@@ -204,15 +124,15 @@ export const ProductosPage = () => {
                             productos.map((producto) => <ProductCard key={producto.id} producto={producto} />)
                         )}
                     </Grid2>
+
+                    {/* 🔹 Paginación */}
                     <Box sx={{ textAlign: 'center', marginTop: '30px', marginBottom: '30px' }}>
                         <p>Mostrando {productos.length} productos de {data?.totalRecords} disponibles</p>
                         <Button
                             onClick={() => {
                                 const newLimit = limit + 20;
                                 setLimit(newLimit);
-                                setSearch('');
                                 setProductoSeleccionado(null);
-                                setProductos([]);
                                 getProductsService(newLimit);
                             }}
                             color="primary"
@@ -226,9 +146,7 @@ export const ProductosPage = () => {
                             onClick={() => {
                                 const newLimit = data?.totalRecords || 0;
                                 setLimit(newLimit);
-                                setSearch('');
                                 setProductoSeleccionado(null);
-                                setProductos([]);
                                 getProductsService(newLimit);
                             }}
                             color="primary"
