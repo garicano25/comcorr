@@ -133,17 +133,35 @@ export const ProductosPage = () => {
                             </Button>
                         </Box>
                     </Grid2>
-                        
+
                     {/* 🔹 Buscador con Select (Marca, Modelo, Linea, Codigo, Disponibilidad) */}
                     <Grid2 container spacing={2} sx={{
-                            background: "#fff",
-                            borderRadius: "10px",
-                            border: "1px solid #e0e0e0",
-                            padding: '10px 5px 15px',
-                            width: '100%',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        }}>
+                        background: "#fff",
+                        borderRadius: "10px",
+                        border: "1px solid #e0e0e0",
+                        padding: '10px 5px 15px',
+                        width: '100%',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+
+                        {/* Linea */}
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="select-linea">Linea</InputLabel>
+                                <Select
+                                    labelId="select-linea"
+                                    variant="outlined"
+                                    value={selectedLinea}
+                                    onChange={(e) => setSelectedLinea(e.target.value)}
+                                >
+                                    <MenuItem value="">Todas</MenuItem>
+                                    {[...new Set(allProductos.map(p => p.linea))].map((linea) => (
+                                        <MenuItem key={linea} value={linea}>{linea}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid2>
 
                         {/* Marca */}
                         <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
@@ -162,25 +180,9 @@ export const ProductosPage = () => {
                                 </Select>
                             </FormControl>
                         </Grid2>
-                            
-                        {/* Linea */}
-                         <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
-                            <FormControl fullWidth>
-                                <InputLabel id="select-linea">Linea</InputLabel>
-                                <Select
-                                    labelId="select-linea"
-                                    variant="outlined"
-                                    value={selectedLinea}
-                                    onChange={(e) => setSelectedLinea(e.target.value)}
-                                >
-                                    <MenuItem value="">Todas</MenuItem>
-                                    {[...new Set(allProductos.map(p => p.linea))].map((linea) => (
-                                        <MenuItem key={linea} value={linea}>{linea}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid2>
-                            
+
+
+
                         {/* Codigo */}
                         <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
                             <FormControl fullWidth>
@@ -198,9 +200,9 @@ export const ProductosPage = () => {
                                 </Select>
                             </FormControl>
                         </Grid2>
-                            
+
                         {/* Disponibilidad */}
-                         <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="select-disponibilidad">Disponibilidad</InputLabel>
                                 <Select
@@ -215,8 +217,8 @@ export const ProductosPage = () => {
                                 </Select>
                             </FormControl>
                         </Grid2>
-                            
-                         {/* Buscador */}
+
+                        {/* Buscador */}
                         <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
                             <Button
                                 startIcon={<Search />}
@@ -229,7 +231,7 @@ export const ProductosPage = () => {
                             >
                                 Buscar
                             </Button>
-                        </Grid2>                          
+                        </Grid2>
                     </Grid2>
 
                     {/* 🔹 Productos */}
