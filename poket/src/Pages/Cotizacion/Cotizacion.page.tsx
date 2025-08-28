@@ -42,10 +42,11 @@ import { createPedidoService } from "../../services/pedido.services";
 
 export function CotizacionPage() {
 
-   const navigate = useNavigate();
+    const navigate = useNavigate();
     const { setAlert } = useAlert();
     const [loadingProducto, setLoadingProducto] = useState<boolean>(false);
     const [modificarPrecio, setModificarPrecio] = useState(false);
+    const [product_code, setProduct_code] = useState<string>('');
     const [precio, setPrecio] = useState<string>('')
     const [total, setTotal] = useState<number | null>(0)
     const [pedido, setPedido] = useState<number | null>(null)
@@ -433,14 +434,45 @@ export function CotizacionPage() {
 
     useEffect(() => {
 
+        const cartItem = localStorage.getItem("cart");
+        if (cartItem) {
+            try {
+                // Parseamos el JSON y extraemos product_code
+                const cartObj = JSON.parse(cartItem) as { product_code: string };
+                setProduct_code(cartObj.product_code);
+
+            } catch (error) {
+                
+                console.error("Error parsing cart from localStorage:", error);
+            }
+        }
+
         //Cargamos todos los clientes del Vendedor o Admin
         loadClientes('')
-
 
         if (modificarPrecio && precioSeleccionado !== "") {
           setPrecioSeleccionado("");
         }
     }, [productosAgregados, modificarPrecio]);
+
+    
+    // Si tenemos product_code, hacemos la búsqueda directa y seteamos selectedOption
+    useEffect(() => {
+        if (product_code) {
+            (async () => {
+                try {
+                    const results = await loadOptions(product_code);
+                    const found = results.find(opt => opt.value === product_code);
+                    if (found) setSelectedOption(found), setProductoSeleccionado(found.producto);
+
+                } catch (error) {
+                    
+                    console.error("Error buscando producto inicial:", error);
+                
+                }
+            })();
+        }
+    }, [product_code]);
 
     
     return (

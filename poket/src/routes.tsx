@@ -2,7 +2,6 @@ import { Route, Routes } from "react-router"
 import { DashboardPage } from "./Pages/Dashboard/Dashboard.page"
 import { CrearRolPage } from "./Pages/Configuracion/CrearRol.page"
 import { LoginPage } from "./Pages/LoginPage"
-import { UnauthorizedPage } from "./Pages/UnauthorizedPage"
 import { ErrorPage } from "./Pages/ErrorPage"
 import { AdminLayout } from "./Layouts/AdminLayout"
 import { CrearPedidoPage } from "./Pages/Pedidos/CrearPedido.page"
@@ -11,6 +10,7 @@ import { CotizacionPage } from "./Pages/Cotizacion/Cotizacion.page"
 import { ConsultarPedidoPage } from "./Pages/Pedidos/ConsultarPedido.page"
 import { ProductosPage } from "./Pages/Productos/Productos.pge"
 import { ClientesPage } from "./Pages/Clientes/Clientes.page"
+import UnauthorizedPage from "./Pages/UnauthorizedPage"
 
 export const WebRoutes = () => {
     return (
