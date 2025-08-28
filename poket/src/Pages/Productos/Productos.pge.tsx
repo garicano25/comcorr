@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { IProductList, IProductListService } from "../../interfaces/productos.interface";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Box, Button, Grid2, Icon, TextField } from "@mui/material";
+import { Box, Button, FormControl, Grid2, Icon, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 import { getProducts } from "../../services/productos.services";
 import { ProductCard } from "../../components/Globales/ProductCardComponent";
 import { Search } from "@mui/icons-material";
@@ -14,6 +14,12 @@ export const ProductosPage = () => {
     const [data, setData] = useState<IProductListService>();
     const [search, setSearch] = useState<string>(""); // 🔹 input del buscador
     const [limit, setLimit] = useState<number>(20);
+
+    // 🔹 Estados para filtros
+    const [selectedMarca, setSelectedMarca] = useState("");
+    const [selectedLinea, setSelectedLinea] = useState("");
+    const [selectedCodigo, setSelectedCodigo] = useState("");
+    const [selectedDisponibilidad, setSelectedDisponibilidad] = useState("");
 
     useEffect(() => {
         getProductsService();
@@ -59,13 +65,29 @@ export const ProductosPage = () => {
         }
     };
 
-    // Filtrar en memoria (marca/linea)
-    useEffect(() => {
+    // 🔹 Filtrar en memoria usando los Select
+    const filterBySelects = () => {
         let filtered = allProductos;
-       
-        setProductos(filtered);
-    }, [ allProductos]);
 
+        if (selectedMarca) {
+            filtered = filtered.filter(p => p.marca === selectedMarca);
+        }
+        if (selectedLinea) {
+            filtered = filtered.filter(p => p.linea === selectedLinea);
+        }
+        if (selectedCodigo) {
+            filtered = filtered.filter(p => p.codigo === selectedCodigo);
+        }
+        if (selectedDisponibilidad) {
+            if (selectedDisponibilidad === "con_stock") {
+                filtered = filtered.filter(p => Number(p.existencia) > 0);
+            } else if (selectedDisponibilidad === "sin_stock") {
+                filtered = filtered.filter(p => Number(p.existencia) <= 0);
+            }
+        }
+
+        setProductos(filtered);
+    };
 
     return (
         <div>
@@ -110,6 +132,104 @@ export const ProductosPage = () => {
                                 Buscar
                             </Button>
                         </Box>
+                    </Grid2>
+                        
+                    {/* 🔹 Buscador con Select (Marca, Modelo, Linea, Codigo, Disponibilidad) */}
+                    <Grid2 container spacing={2} sx={{
+                            background: "#fff",
+                            borderRadius: "10px",
+                            border: "1px solid #e0e0e0",
+                            padding: '10px 5px 15px',
+                            width: '100%',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}>
+
+                        {/* Marca */}
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="select-marca">Marca</InputLabel>
+                                <Select
+                                    labelId="select-marca"
+                                    variant="outlined"
+                                    value={selectedMarca}
+                                    onChange={(e) => setSelectedMarca(e.target.value)}
+                                >
+                                    <MenuItem value="">Todas</MenuItem>
+                                    {[...new Set(allProductos.map(p => p.marca))].map((marca) => (
+                                        <MenuItem key={marca} value={marca}>{marca}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid2>
+                            
+                        {/* Linea */}
+                         <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="select-linea">Linea</InputLabel>
+                                <Select
+                                    labelId="select-linea"
+                                    variant="outlined"
+                                    value={selectedLinea}
+                                    onChange={(e) => setSelectedLinea(e.target.value)}
+                                >
+                                    <MenuItem value="">Todas</MenuItem>
+                                    {[...new Set(allProductos.map(p => p.linea))].map((linea) => (
+                                        <MenuItem key={linea} value={linea}>{linea}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid2>
+                            
+                        {/* Codigo */}
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="select-codigo">Codigo</InputLabel>
+                                <Select
+                                    labelId="select-codigo"
+                                    variant="outlined"
+                                    value={selectedCodigo}
+                                    onChange={(e) => setSelectedCodigo(e.target.value)}
+                                >
+                                    <MenuItem value="">Todos</MenuItem>
+                                    {[...new Set(allProductos.map(p => p.codigo))].map((codigo) => (
+                                        <MenuItem key={codigo} value={codigo}>{codigo}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid2>
+                            
+                        {/* Disponibilidad */}
+                         <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <FormControl fullWidth>
+                                <InputLabel id="select-disponibilidad">Disponibilidad</InputLabel>
+                                <Select
+                                    labelId="select-disponibilidad"
+                                    variant="outlined"
+                                    value={selectedDisponibilidad}
+                                    onChange={(e) => setSelectedDisponibilidad(e.target.value)}
+                                >
+                                    <MenuItem value="">Todas</MenuItem>
+                                    <MenuItem value="con_stock">Con Stock</MenuItem>
+                                    <MenuItem value="sin_stock">Sin Stock</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid2>
+                            
+                         {/* Buscador */}
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <Button
+                                startIcon={<Search />}
+                                onClick={filterBySelects}
+                                variant="contained"
+                                sx={{
+                                    bgcolor: "primary.main",
+                                    color: "white",
+                                }}
+                            >
+                                Buscar
+                            </Button>
+                        </Grid2>                          
                     </Grid2>
 
                     {/* 🔹 Productos */}
