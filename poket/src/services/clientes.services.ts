@@ -50,7 +50,7 @@ export const createAddressClient = (data: { direccion: string, telefono: string 
         }
     });
 }
-export const createClientService = (data: { nombre: string, telefono: string, vendedor: number}) => {
+export const createClientService = (data: { nombre: string, rfc: string, telefono: string, vendedor: number}) => {
     return new Promise<IResponseCreateCliente>(async (resolve, reject) => {
         try {
             const response: AxiosResponse = await clientAdmin.post(`/clientes`, data);

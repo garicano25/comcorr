@@ -465,11 +465,18 @@ export function CotizacionPage() {
                     const found = results.find(opt => opt.value === product_code);
                     if (found) setSelectedOption(found), setProductoSeleccionado(found.producto);
 
+                    // Limpiamos el product_code de localStorage después de usarlo
+                    localStorage.removeItem("cart");
+
+
                 } catch (error) {
                     
                     console.error("Error buscando producto inicial:", error);
+                    enqueueSnackbar("Hubo un error al consultar el producto seleccionado, intentelo nuevamente ", { variant: 'error' });
+
                 
                 }
+                
             })();
         }
     }, [product_code]);

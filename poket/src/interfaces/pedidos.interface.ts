@@ -1,44 +1,38 @@
 export interface IProduct {
-    id: number;
-    name: string;
-    marca: string
-    stock: number;
-    description: string;
-    price: string
+  id: number;
+  name: string;
+  marca: string;
+  stock: number;
+  description: string;
+  price: string;
 }
-
 
 export interface IProductSelected {
-    id: number;
-    clave: string;
-    descripcion: string;
-    articulo_id: number;
-    cantidad: number;
-    precio_unitario: number
-  
+  id: number;
+  clave: string;
+  descripcion: string;
+  articulo_id: number;
+  cantidad: number;
+  precio_unitario: number;
 }
-
 
 export interface IPayloadProductos {
-    articulo_id: number,
-    cantidad: number,
-    precio_unitario: number
+  articulo_id: number;
+  cantidad: number;
+  precio_unitario: number;
 }
 
-
 export interface IPayloadPedido {
-    direccion_id: number,
-    cliente_id: number,
-    comentarios:string
-    articulos: IPayloadProductos[]
+  direccion_id: number;
+  cliente_id: number;
+  comentarios: string;
+  articulos: IPayloadProductos[];
 }
 
 export interface IResponseCreatePedido {
-    success: boolean,
-    pedido_id:number
+  success: boolean;
+  pedido_id: number;
 }
-
-
 
 // Interfaces Lista de Pedidos
 export interface IListPedidos {
@@ -58,24 +52,23 @@ export interface IListPedidos {
   cliente_telefono?: string;
 }
 
-export interface IResponseGetPedidos{
-  page: number,
-  limit: number,
-  totalRecords: number,
-  totalPages: number,
-  pedidos: IListPedidos[]
+export interface IResponseGetPedidos {
+  page: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+  pedidos: IListPedidos[];
 }
 
-
 export interface IResponseEstatusPedido {
-  success: boolean,
-  mensaje: string
-
+  success: boolean;
+  mensaje: string;
 }
 
 export interface IArticulosPedido {
   id: number;
   pedido_id: number;
+  codigo: string;
   articulo_id: number;
   cantidad: number;
   precio_unitario: string;
@@ -88,10 +81,10 @@ export interface IArticulosPedido {
 }
 
 export interface IResponseInfoPedido {
-    pedido: IListPedidos
-    articulos: IArticulosPedido[]
+  pedido: IListPedidos;
+  articulos: IArticulosPedido[];
 }
 
 export interface IResponseSendEmail {
-  success: boolean
+  success: boolean;
 }

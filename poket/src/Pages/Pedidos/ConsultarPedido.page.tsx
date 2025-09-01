@@ -350,7 +350,7 @@ export function ConsultarPedidoPage() {
 
 
   // Function Update Price Art
-  const updatePriceArt = async (data: { articulo_id: number, precio: number }) => {
+  const updatePriceArt = async (data: { articulo_id: number, precio: number, cantidad: number }) => {
     
     setLoaderPrice(true)
     try {
@@ -358,8 +358,8 @@ export function ConsultarPedidoPage() {
       const response = await sendUpdatePriceArt(data, Number(pedido_id))
       if (response.success) {
         setAlert({
-            title: "Precio actualizado",
-            text: 'Articulo Modificado',
+            title: "Producto actualizado",
+            text: 'El producto fue actualizado con exito.',
             open: true,
             icon: 'success',
         });
@@ -370,7 +370,7 @@ export function ConsultarPedidoPage() {
 
     } catch (error) {
       console.log("Update Price error: " + error)
-      enqueueSnackbar("Hubo un error al intentar actualizar el precio del pedido, por favor intente nuevamente.", { variant: 'error'});
+      enqueueSnackbar("Hubo un error al intentar actualizar el producto del pedido, por favor intente nuevamente.", { variant: 'error'});
 
     } finally {
 
@@ -615,12 +615,23 @@ export function ConsultarPedidoPage() {
                           const data = {
                               articulo_id: articuloId,
                               precio: Number(formData.get("precio") ?? ''),
+                              cantidad: Number(formData.get("cantidad") ?? ''),
                           };
 
                           updatePriceArt(data);
                       }}
                       sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                   >
+                      <TextField
+                      label="Cantidad"
+                      name="cantidad"
+                      type="number"
+                      defaultValue={ dataPedido?.articulos.find(art => art.articulo_id === articuloId)?.cantidad || 0 }
+                      variant="outlined"
+                      required
+                      fullWidth
+                    />
+
                       <TextField
                           label="Nuevo Precio Convenido"
                           name="precio"

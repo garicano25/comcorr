@@ -113,7 +113,7 @@ export function ClientesPage() {
 
 
     //Funcion para crear una nueva dirreccion
-    const createClient = async (data : {nombre:string, telefono:string, vendedor: number}) => {
+    const createClient = async (data : {nombre:string, rfc:string, telefono:string, vendedor: number}) => {
         
         setSaveClient(true)
         
@@ -248,6 +248,7 @@ export function ClientesPage() {
 
                             const data = {
                                 nombre: String(formData.get("razon_social") ?? ''),
+                                rfc: String(formData.get("rfc") ?? ''),
                                 telefono: String(formData.get("telefono") ?? ''),
                                 vendedor: vendedor
                             };
@@ -259,6 +260,13 @@ export function ClientesPage() {
                         <TextField
                             label="Razón social"
                             name="razon_social"
+                            variant="outlined"
+                            required
+                            fullWidth
+                        />
+                        <TextField
+                            label="RFC"
+                            name="rfc"
                             variant="outlined"
                             required
                             fullWidth

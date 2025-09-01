@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 import { IProductList, IProductListService } from "../../interfaces/productos.interface";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Box, Button, FormControl, Grid2, Icon, InputLabel, MenuItem, Select, TextField } from "@mui/material";
-import { getProducts } from "../../services/productos.services";
+import { Box, Button, FormControl, Grid2, Icon, InputLabel, MenuItem, Select, TextField, Tooltip, Zoom } from "@mui/material";
+import { getProducts, updatesProducts } from "../../services/productos.services";
 import { ProductCard } from "../../components/Globales/ProductCardComponent";
-import { Search } from "@mui/icons-material";
+import { RefreshOutlined, Search } from "@mui/icons-material";
+import { IUser } from "../../interfaces/user.interface";
+import { decodeToken } from "../../utils/options.token";
+import { enqueueSnackbar } from "notistack";
 
 export const ProductosPage = () => {
     const [loading, setLoading] = useState(false);
+    const [loadingUpdate, setLoadingUpdate] = useState(false);
     const [productos, setProductos] = useState<IProductList[]>([]);
     const [allProductos, setAllProductos] = useState<IProductList[]>([]);
     const [productoSeleccionado, setProductoSeleccionado] = useState<IProductList | null>(null);
     const [data, setData] = useState<IProductListService>();
-    const [search, setSearch] = useState<string>(""); // 🔹 input del buscador
+    const [search, setSearch] = useState<string>("");
     const [limit, setLimit] = useState<number>(20);
+
+    const token : IUser | null = decodeToken();
+    
 
     // 🔹 Estados para filtros
     const [selectedMarca, setSelectedMarca] = useState("");
@@ -89,6 +96,32 @@ export const ProductosPage = () => {
         setProductos(filtered);
     };
 
+
+    const updateProducts =  async () => { 
+        
+        setLoadingUpdate(true);
+
+        try {
+
+            const data = await updatesProducts();
+
+            if (data.success) { 
+            
+                enqueueSnackbar("Productos actualizados correctamente.", { variant: 'success' });
+                getProductsService(limit); // refresca la lista
+            }
+
+        } catch (error) {
+            console.error("Error actualizando productos:", error);
+            enqueueSnackbar("Error al actualizar los productos.", { variant: 'error' });
+
+        } finally {
+            setLoadingUpdate(false);
+        }
+
+
+    }
+
     return (
         <div>
             {loading ? (
@@ -101,7 +134,7 @@ export const ProductosPage = () => {
                     <Grid2 container spacing={2} sx={{
                         background: "#fff",
                         borderRadius: "10px",
-                        border: "1px solid #e0e0e0",
+                        border: "1px solid #f1eaeaff",
                         padding: '10px 5px 15px',
                         width: '100%',
                         justifyContent: 'center',
@@ -116,7 +149,7 @@ export const ProductosPage = () => {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                sx={{ borderRadius: "15px", marginTop: "8px", border: "1px solid #000" }}
+                                sx={{ borderRadius: "15px", marginTop: "8px", border: "1px solid #ccc9c9ff" }}
                             />
                         </Box>
                         <Box sx={{ maxWidth: '20%', width: '20%', mt: 1 }}>
@@ -133,20 +166,20 @@ export const ProductosPage = () => {
                             </Button>
                         </Box>
                     </Grid2>
-
+                        
                     {/* 🔹 Buscador con Select (Marca, Modelo, Linea, Codigo, Disponibilidad) */}
                     <Grid2 container spacing={2} sx={{
-                        background: "#fff",
-                        borderRadius: "10px",
-                        border: "1px solid #e0e0e0",
-                        padding: '10px 5px 15px',
-                        width: '100%',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}>
-
+                            background: "#fff",
+                            borderRadius: "10px",
+                            border: "1px solid #e0e0e0",
+                            padding: '10px 5px 15px',
+                            width: '100%',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}>
+                            
                         {/* Linea */}
-                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                         <Grid2 size={{ xs: 12, sm: 6, md: 2 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="select-linea">Linea</InputLabel>
                                 <Select
@@ -164,7 +197,7 @@ export const ProductosPage = () => {
                         </Grid2>
 
                         {/* Marca */}
-                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="select-marca">Marca</InputLabel>
                                 <Select
@@ -180,11 +213,11 @@ export const ProductosPage = () => {
                                 </Select>
                             </FormControl>
                         </Grid2>
-
-
-
+                            
+                   
+                            
                         {/* Codigo */}
-                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2}}>
                             <FormControl fullWidth>
                                 <InputLabel id="select-codigo">Codigo</InputLabel>
                                 <Select
@@ -200,9 +233,9 @@ export const ProductosPage = () => {
                                 </Select>
                             </FormControl>
                         </Grid2>
-
+                            
                         {/* Disponibilidad */}
-                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                         <Grid2 size={{ xs: 12, sm: 6, md: 2 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="select-disponibilidad">Disponibilidad</InputLabel>
                                 <Select
@@ -217,9 +250,9 @@ export const ProductosPage = () => {
                                 </Select>
                             </FormControl>
                         </Grid2>
-
-                        {/* Buscador */}
-                        <Grid2 size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            
+                         {/* Buscador */}
+                        <Grid2 size={{ xs: 12, sm: 6, md: 2 }} width={{md:'auto'}}>
                             <Button
                                 startIcon={<Search />}
                                 onClick={filterBySelects}
@@ -231,7 +264,30 @@ export const ProductosPage = () => {
                             >
                                 Buscar
                             </Button>
-                        </Grid2>
+                        </Grid2>        
+                            
+                        {/* Actualizar productos */}
+                        {token && token.role === 1 && (
+                                
+                            <Grid2 size={{ xs: 12, sm: 6, md: 2 }} sx={{ margin: 0 }}>
+                                <Tooltip title="Actualizar productos" slots={{ transition: Zoom }} placement="top">
+                                    <Button
+                                        startIcon={<RefreshOutlined />}
+                                        onClick={updateProducts}
+                                        disabled={loadingUpdate}    
+                                        variant="contained"
+                                        sx={{
+                                            bgcolor: "#f3b30d",
+                                            color: "black",
+                                        }}
+                                    >
+                                       {!loadingUpdate ? 'Actualizar' : 'Actualizando...'}  
+                                    </Button>
+                                </Tooltip>
+                            </Grid2>  
+                                
+                        )}    
+
                     </Grid2>
 
                     {/* 🔹 Productos */}

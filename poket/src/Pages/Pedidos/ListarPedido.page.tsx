@@ -107,7 +107,7 @@ export function ListarPedidoPage() {
             
             if (token.role === 1) {
                 setAlert({
-                    title: '¿Está seguro de rechazar este pedido?',
+                    title: '¿Está seguro de cancelar este pedido?',
                     text: 'Es necesario confirmar para continuar.',
                     open: true,
                     icon: 'question',
@@ -186,7 +186,7 @@ export function ListarPedidoPage() {
                     color={
                         params.value === 'aceptado' ? 'success' :
                         params.value === 'en proceso' ? 'warning' :
-                        params.value === 'rechazado' ? 'error' :
+                        params.value === 'cancelado' ? 'error' :
                         'default'
                     }
                 />
@@ -204,7 +204,7 @@ export function ListarPedidoPage() {
             renderCell: (params) => (
                 <div>
                     <Button
-                        disabled={params.row.estado === 'aceptado' || params.row.estado === 'rechazado' || token?.role != 1}
+                        disabled={params.row.estado === 'aceptado' || params.row.estado === 'cancelado' || token?.role != 1}
                         id="basic-button"
                         aria-controls={open ? 'basic-menu' : undefined}
                         aria-haspopup="true"
@@ -214,7 +214,7 @@ export function ListarPedidoPage() {
                     >
                         {params.row.estado === 'aceptado'
                             ? <><Icon>check_circle</Icon></>
-                            : params.row.estado === 'rechazado' ?<> <Icon>cancel</Icon></>  : <><Icon>menu</Icon></>}  
+                            : params.row.estado === 'cancelado' ?<> <Icon>cancel</Icon></>  : <><Icon>menu</Icon></>}  
                     </Button>
                     <Menu
                         id="basic-menu"
@@ -239,7 +239,7 @@ export function ListarPedidoPage() {
                                 showAlertDecline(selectedRow.id);
                             }
                             handleClose();
-                        }}>Rechazar</MenuItem>
+                        }}>Cancelar</MenuItem>
                     </Menu>
                 </div>
             ),

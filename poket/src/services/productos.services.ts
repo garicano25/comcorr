@@ -1,17 +1,30 @@
 import { AxiosResponse } from "axios";
 import { IProductListService } from "../interfaces/productos.interface";
 import { clientAdmin } from "../interceptors/axios.client";
+import { IResponseSendEmail } from "../interfaces/pedidos.interface";
 
-export const getProducts = (limit:number, search:string) => {
-    return new Promise<IProductListService>(async (resolve, reject) => {
-        try {
+export const getProducts = (limit: number, search: string) => {
+  return new Promise<IProductListService>(async (resolve, reject) => {
+    try {
+      const response: AxiosResponse = await clientAdmin.get(
+        "/articulos?limit=" + limit + "&search=" + search
+      );
+      return resolve(response.data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 
-            const response: AxiosResponse = await clientAdmin.get('/articulos?limit=' + limit + '&search=' + search);
-            return resolve(response.data);
-
-        } catch (e) {
-            reject(e)
-        }
-
-    });
-}
+export const updatesProducts = () => {
+  return new Promise<IResponseSendEmail>(async (resolve, reject) => {
+    try {
+      const response: AxiosResponse = await clientAdmin.get(
+        "/jobs/sync-articulos"
+      );
+      return resolve(response.data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
