@@ -19,7 +19,7 @@ export const getProducts = (limit: number, search: string) => {
 export const updatesProducts = () => {
   return new Promise<IResponseSendEmail>(async (resolve, reject) => {
     try {
-      const response: AxiosResponse = await clientAdmin.get(
+      const response: AxiosResponse = await clientAdmin.post(
         "/jobs/sync-articulos"
       );
       return resolve(response.data);
