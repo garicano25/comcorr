@@ -163,13 +163,18 @@ export function ConsultarPedidoPage() {
           headerClassName: '--header-table'
       },
       {
-          headerName: 'Precio',
-          field: 'precio_unitario',
-          type: 'string',
-          align: 'center',
-          width: 130,
-          headerAlign: 'center',
-          headerClassName: '--header-table'
+        headerName: 'Precio',
+        field: 'precio_unitario',
+        type: 'string',
+        align: 'center',
+        width: 130,
+        headerAlign: 'center',
+        headerClassName: '--header-table',
+        renderCell: (params) => (
+          <>
+            ${params.value}
+          </>
+        ),
       },
       {
           headerName: 'Cantidad',
@@ -180,14 +185,28 @@ export function ConsultarPedidoPage() {
           headerAlign: 'center',
           headerClassName: '--header-table'
       },
+         {
+        headerName: 'Descuento',
+        field: 'descuento',
+        type: 'string',
+        align: 'center',
+        width: 130,
+        headerAlign: 'center',
+        headerClassName: '--header-table',
+      },
       {
-          headerName: 'Total',
-          field: 'total',
-          type: 'string',
-          align: 'center',
-          width: 140,
-          headerAlign: 'center',
-          headerClassName: '--header-table'
+        headerName: 'Total',
+        field: 'total',
+        type: 'string',
+        align: 'center',
+        width: 140,
+        headerAlign: 'center',
+        headerClassName: '--header-table',
+        renderCell: (params) => (
+          <>
+            ${params.value}
+          </>
+        ),
     },
     {
       headerName: 'Precio convenido',

@@ -40,6 +40,7 @@ export interface IListPedidos {
   id: number;
   usuario_id: number;
   direccion_id: number;
+  direccion: string;
   cliente_id: number;
   fecha_creacion: string;
   estado: "aceptado" | "en proceso" | "rechazado";
@@ -68,6 +69,7 @@ export interface IResponseEstatusPedido {
 export interface IArticulosPedido {
   id: number;
   pedido_id: number;
+  descuento: string;
   codigo: string;
   articulo_id: number;
   cantidad: number;

@@ -35,12 +35,12 @@ export default function DescargarPDF({ dataPedido }: Props) {
       // --------------------------
       // Título y eslogan centrados
       // --------------------------
-      doc.setFontSize(20);
+      doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(31,73,125);
       doc.text("COMERCIAL CORREA", pageWidth / 2, 18, { align: "center" });
 
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(31,73,125);
       doc.text( "MAYORISTAS EN LÍNEA BLANCA, ELECTRÓNICA Y AIRE ACONDICIONADO", pageWidth / 2, 26, { align: "center" });
@@ -48,11 +48,13 @@ export default function DescargarPDF({ dataPedido }: Props) {
       // --------------------------
       // Fila 1: Logo (izq) + Pedido (der)
       // --------------------------
+      doc.setFontSize(8);
+
       const topRowY = 36;
 
       // LOGO (IZQUIERDA)
-      const logoW = 55;
-      const logoH = 40;
+      const logoW = 45;
+      const logoH = 30;
       doc.addImage(img, "PNG", xLeft, topRowY, logoW, logoH);
       const logoEndY = topRowY + logoH;
 
@@ -62,7 +64,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
         margin: { left: xRight },
         tableWidth: colW,
         theme: "plain",
-        styles: { fontSize: 10, cellPadding: 2.5 },
+        styles: { fontSize: 8, cellPadding: 1.5 },
         columnStyles: {
           0: { fontStyle: "bold", halign: "right" },
           1: { halign: "center", lineWidth: 0.1, lineColor: [180, 180, 180] },
@@ -89,28 +91,28 @@ export default function DescargarPDF({ dataPedido }: Props) {
         tableWidth: colW,
         theme: "plain",
         head: [["Datos Cliente"]],
+        styles: { fontSize: 8 },
         headStyles: { fillColor: [83, 141, 213], textColor: 255, fontStyle: "bold", halign: "center" },
         columnStyles: {0: { halign: 'center' },},
         body: [
           [(pedido.cliente_nombre || "N/A")],
-          [ "Dirreccion"],
-          ["Cod. Postal"],
+          [ (pedido.direccion || "N/A")],
         ],
       });
       const clienteEndY = (doc as any).lastAutoTable.finalY;
 
       // Descripción (DERECHA)
-      autoTable(doc, {
-        startY: nextRowY,
-        margin: { left: xRight },
-        tableWidth: colW,
-        theme: "plain",
-        head: [["Descripción:"]],
-        headStyles: { fillColor: [83, 141, 213], textColor: 255, fontStyle: "bold", halign: "center" },
-        styles: { fontSize: 10, cellPadding: 3, lineWidth: 0.1, lineColor: [180, 180, 180] },
-        columnStyles: {0: { cellPadding:10 },},
-        body: [[""],],
-      });
+      // autoTable(doc, {
+      //   startY: nextRowY,
+      //   margin: { left: xRight },
+      //   tableWidth: colW,
+      //   theme: "plain",
+      //   head: [["Descripción:"]],
+      //   headStyles: { fillColor: [83, 141, 213], textColor: 255, fontStyle: "bold", halign: "center" },
+      //   styles: { fontSize: 8, cellPadding: 1.5, lineWidth: 0.1, lineColor: [180, 180, 180] },
+      //   columnStyles: {0: { cellPadding:10 },},
+      //   body: [[""],],
+      // });
       const descEndY = (doc as any).lastAutoTable.finalY;
 
       const startYArticulos = Math.max(descEndY, clienteEndY) + 10;
@@ -121,12 +123,13 @@ export default function DescargarPDF({ dataPedido }: Props) {
 
       autoTable(doc, {
         startY: startYArticulos,
-        head: [["CANTIDAD","CODIGO","DESCRIPCIÓN", "P. UNITARIO", "TOTAL"]],
+        head: [["CANTIDAD","CODIGO","DESCRIPCIÓN", "P. UNITARIO","DESCUENTO", "TOTAL"]],
         body: articulos.map((art) => [
           art.cantidad,
           art.codigo,
           art.descripcion,
           `$ ${Number(art.precio_unitario).toFixed(2)}`,
+          art.descuento,
           `$ ${Number(art.total).toFixed(2)}`,
         ]),
         columnStyles: {
@@ -137,6 +140,8 @@ export default function DescargarPDF({ dataPedido }: Props) {
           4: { halign: 'center' },
         },
         headStyles: { fillColor: [54, 96, 146], textColor: 255, fontStyle: "bold", cellPadding: 2, halign: "center" },
+        styles: { fontSize: 8 },
+
       });
 
       // --------------------------
@@ -152,9 +157,9 @@ export default function DescargarPDF({ dataPedido }: Props) {
         theme: "plain",
         head: [["NOTAS/INSTRUCCIONES"]],
         headStyles: { fillColor: [22, 54, 92], textColor: 255, fontStyle: "bold", halign: "center" },
-        styles: { fontSize: 10, cellPadding: 3, lineWidth: 0.1, lineColor: [180, 180, 180] },
-        columnStyles: {0: { cellPadding:10 },},
-        body: [[""]], 
+        styles: { fontSize: 8, cellPadding: 2, lineWidth: 0.1, lineColor: [180, 180, 180] },
+        columnStyles: {0: { cellPadding:5 },},
+        body: [[(pedido.comentarios || "")],], 
       });
       const notasEndY = (doc as any).lastAutoTable.finalY;
 
@@ -164,7 +169,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
         margin: { left: xRight },
         tableWidth: colW,
         theme: "plain",
-        styles: { fontSize: 12, cellPadding: 5 },
+        styles: { fontSize: 10, cellPadding: 5 },
         body: [
           [
             { content: "Total", styles: { fontStyle: "bold", halign: "left" } },
@@ -179,7 +184,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
       // --------------------------
       // Texto: NO DEVOLUCIONES
       // --------------------------
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
       doc.text( "ACEPTADO EL PEDIDO NO SE ACEPTAN DEVOLUCIONES.", pageWidth / 2, afterNotasTotalY,{ align: "center" });
 
@@ -191,7 +196,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
         margin: { left: xLeft },
         tableWidth: pageWidth - margin * 2,
         theme: "plain",
-        styles: { fontSize: 10, cellPadding: 4 },
+        styles: { fontSize: 8, cellPadding: 4 },
         body: [
           [
             { content: "NOMBRE AGENTE DE VENTA", styles: { fontStyle: "bold", halign: "left" } },
@@ -241,7 +246,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 4,
         theme: "plain",
-        styles: { fontSize: 10, cellPadding: 2.5, lineWidth: 0.1, lineColor: [180, 180, 180], halign: "center" },
+        styles: { fontSize: 8, cellPadding: 1.5, lineWidth: 0.1, lineColor: [180, 180, 180], halign: "center" },
         body: [
           ["BANCOMER", "BANAMEX"],
           ["CTA: 0105097517", "CTA: 7086747"],
@@ -251,7 +256,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
       });
 
        // --- PIE DE PÁGINA ---
-      doc.setFontSize(12);
+      doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.text( "Pomposo Díaz del Castillo 26, Nuevo Progreso, 86700 Macuspana, Tab.", pageWidth / 2, doc.internal.pageSize.getHeight() - 15,{ align: "center", });
       doc.text("TEL: 936 123 2716",pageWidth / 2,doc.internal.pageSize.getHeight() - 10,{ align: "center" });
