@@ -6,6 +6,7 @@ import {
   Button,
   CircularProgress,
   Icon,
+  IconButton,
   Modal,
   TextField,
   Tooltip,
@@ -177,15 +178,93 @@ export function ConsultarPedidoPage() {
         ),
       },
       {
-          headerName: 'Cantidad',
-          field: 'cantidad',
-          type: 'number',
-          align: 'center',
-          width: 130,
-          headerAlign: 'center',
-          headerClassName: '--header-table'
+        headerName: "Cantidad",
+        field: "cantidad",
+        type: "number",
+        align: "center",
+        width: 200,
+        headerAlign: "center",
+        headerClassName: "--header-table",
+        renderCell: (params) => {
+
+          const [value, setValue] = useState<string>(params.row.cantidad?.toString() || "0");
+
+
+          //Aumentar
+          const handleIncrease = async () => {
+            
+            setValue((prev) => (Number(prev) + 1).toString())
+            const response = await updatePriceArt({ articulo_id: Number(params.row.articulo_id), precio: Number(params.row.precio_unitario), cantidad: Number(value) + 1 });
+            if (response === 0) {
+              setValue((prev) => Math.max(Number(prev) - 1, 0).toString())
+            }
+          };
+
+          //Disminuir
+          const handleDecrease = async () => {
+            
+            setValue((prev) => Math.max(Number(prev) - 1, 0).toString())
+            const response = await updatePriceArt({ articulo_id: Number(params.row.articulo_id), precio: Number(params.row.precio_unitario), cantidad: Math.max(Number(value) - 1, 0) });
+            if (response === 0) {
+              setValue((prev) => prev + 1)
+            }
+          };
+
+
+          // Actualizar cantidad
+          const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+
+            // Permitimos vacío o un número
+            if (val === "" || /^[0-9\b]+$/.test(val)) {
+              setValue(val);
+            }
+          };
+
+
+          const updatePrice = async () => { 
+            
+            const numericValue = value === "" ? 0 : parseInt(value, 10);
+            setValue(numericValue.toString());
+            
+            const response = await updatePriceArt({ articulo_id: Number(params.row.articulo_id), precio: Number(params.row.precio_unitario), cantidad: Number(value) });
+            if (response === 0) {
+              setValue(params.row.cantidad || 0)
+            }
+          
+          }
+
+          return (
+            <Box display="flex" alignItems="center" gap={1}>
+              <IconButton
+                size="small"
+                onClick={handleDecrease}
+                sx={{ border: "1px solid #ccc" }}
+              >
+                <Icon>remove</Icon>
+              </IconButton>
+
+              <TextField
+                type="number"
+                value={value}
+                onChange={handleChange}
+                onBlur={updatePrice}
+                inputProps={{ style: { textAlign: "center", width: "60px" } }}
+                size="small"
+              />
+
+              <IconButton
+                size="small"
+                onClick={handleIncrease}
+                sx={{ border: "1px solid #ccc" }}
+              >
+                <Icon>add</Icon>
+              </IconButton>
+            </Box>
+          );
+        },
       },
-         {
+      {
         headerName: 'Descuento',
         field: 'descuento',
         type: 'string',
@@ -376,20 +455,21 @@ export function ConsultarPedidoPage() {
 
       const response = await sendUpdatePriceArt(data, Number(pedido_id))
       if (response.success) {
-        setAlert({
-            title: "Producto actualizado",
-            text: 'El producto fue actualizado con exito.',
-            open: true,
-            icon: 'success',
-        });
+       
+        enqueueSnackbar("Producto actualizado con exito.", { variant: 'success'});
 
         handleClose();
         loadInfoPedido();
       }
 
+      return 1;
+
     } catch (error) {
+
       console.log("Update Price error: " + error)
       enqueueSnackbar("Hubo un error al intentar actualizar el producto del pedido, por favor intente nuevamente.", { variant: 'error'});
+
+      return 0;
 
     } finally {
 

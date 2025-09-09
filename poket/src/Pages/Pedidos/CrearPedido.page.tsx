@@ -49,7 +49,15 @@ export function CrearPedidoPage() {
     const [pedido, setPedido] = useState<number | null>(null)
     const [cantidad, setCantidad] = useState<number | null>(0)
     const [activeStep, setActiveStep] = useState(0);
-    const [productosAgregados, setProductosAgregados] = useState<IProductSelected[]>([]);
+
+    // Productos agregados al pedido
+    const [productosAgregados, setProductosAgregados] = useState<IProductSelected[]>(() => {
+        const saved = localStorage.getItem("productosAgregados");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [productosAgregadosResumen, setProductosAgregadosResumen] = useState<IProductSelected[]>([]);
+
     const [sendingPedido, setSendingPedido] = useState(false);
     const [precioSeleccionado, setPrecioSeleccionado] = useState<string | null>(null);
     const [productoSeleccionado, setProductoSeleccionado] = useState<IProductList | null>(null);
@@ -189,7 +197,7 @@ export function CrearPedidoPage() {
             if (addresId == null || clienteSeleccionado?.id == null) {
 
                 setActiveStep((prev) => prev - 1);
-                enqueueSnackbar("Al parecer no ha seleccionado un Cliente o una Direcció, verifique la informacion para continuar.", { variant: 'warning' });
+                enqueueSnackbar("Al parecer no ha seleccionado un Cliente o una Dirección, verifique la información para continuar.", { variant: 'warning' });
                 
                 setSendingPedido(false);
 
@@ -210,9 +218,15 @@ export function CrearPedidoPage() {
                     }))
                 };
 
-                const response : IResponseCreatePedido = await createPedidoService(payload);
+                const response: IResponseCreatePedido = await createPedidoService(payload);
+
+                setProductosAgregadosResumen(productosAgregados)
                 setPedido(response.pedido_id)
                 setSendingPedido(false);
+
+                setTimeout(() => {
+                    setProductosAgregados([]);
+                }, 1000);
 
             }
             
@@ -431,6 +445,10 @@ export function CrearPedidoPage() {
         if (modificarPrecio && precioSeleccionado !== "") {
           setPrecioSeleccionado("");
         }
+
+        // Obtenemos los productos agregados del localStorage
+        localStorage.setItem("productosAgregados", JSON.stringify(productosAgregados));
+
     }, [productosAgregados, modificarPrecio]);
 
     
@@ -563,7 +581,7 @@ export function CrearPedidoPage() {
                                                 <RadioGroup row aria-labelledby="precio-radio" name="precio-radio" value={precio} onChange={(e) => setPrecio(e.target.value)}>
                                                    <FormControlLabel
                                                         value={Number(productoSeleccionado.precio1)}
-                                                        disabled={modificarPrecio}
+                                                        disabled={modificarPrecio || Number(productoSeleccionado.precio1) === 0}
                                                         control={
                                                             <Radio
                                                             icon={<RadioButtonUncheckedIcon />}
@@ -578,7 +596,7 @@ export function CrearPedidoPage() {
                                                             }}
                                                             />
                                                         }
-                                                        label={`$ ${productoSeleccionado.precio1}`}
+                                                        label={`$ ${productoSeleccionado.precio1 ? Number(productoSeleccionado.precio1).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : '0.00'}`}
                                                         sx={{
                                                             background: '#fff',
                                                             borderRadius: '15px',
@@ -600,7 +618,7 @@ export function CrearPedidoPage() {
                                                     />
                                                  <FormControlLabel
                                                         value={Number(productoSeleccionado.precio2)}
-                                                        disabled={modificarPrecio}
+                                                        disabled={modificarPrecio || Number(productoSeleccionado.precio2) === 0}
                                                         control={
                                                             <Radio
                                                             icon={<RadioButtonUncheckedIcon />}
@@ -615,7 +633,7 @@ export function CrearPedidoPage() {
                                                             }}
                                                             />
                                                         }
-                                                        label={`$ ${productoSeleccionado.precio2}`}
+                                                        label={`$ ${productoSeleccionado.precio2 ? Number(productoSeleccionado.precio1).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : '0.00'}`}
                                                         sx={{
                                                             background: '#fff',
                                                             borderRadius: '15px',
@@ -748,6 +766,7 @@ export function CrearPedidoPage() {
                                     pageSizeOptions={[10, 25, 50, 100]}
                                     loading={false}
                                     localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                                    
                                     slots={{
                                         footer: () => (
                                             <Box
@@ -1053,7 +1072,7 @@ export function CrearPedidoPage() {
                             
                             </Box>
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt:4 }}>
-                                {productosAgregados.map((producto, index) => (
+                                {productosAgregadosResumen.map((producto, index) => (
                                     <Box
                                     key={index}
                                     sx={{
@@ -1113,7 +1132,7 @@ export function CrearPedidoPage() {
                                     Total:
                                     </Typography>
                                     <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>
-                                    ${productosAgregados
+                                    ${productosAgregadosResumen
                                         .reduce((acc, p) => acc + p.cantidad * p.precio_unitario, 0)
                                         .toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                                     </Typography>

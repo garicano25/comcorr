@@ -1,5 +1,8 @@
 import { AxiosResponse } from "axios";
-import { IProductListService } from "../interfaces/productos.interface";
+import {
+  IProductListService,
+  IProductoUpdate,
+} from "../interfaces/productos.interface";
 import { clientAdmin } from "../interceptors/axios.client";
 import { IResponseSendEmail } from "../interfaces/pedidos.interface";
 
@@ -21,6 +24,22 @@ export const updatesProducts = () => {
     try {
       const response: AxiosResponse = await clientAdmin.post(
         "/jobs/sync-articulos"
+      );
+      return resolve(response.data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+export const updateProduct = (clave: string) => {
+  return new Promise<IProductoUpdate>(async (resolve, reject) => {
+    try {
+      const response: AxiosResponse = await clientAdmin.post(
+        "/jobs/sync-articulos",
+        {
+          clave: clave,
+        }
       );
       return resolve(response.data);
     } catch (e) {

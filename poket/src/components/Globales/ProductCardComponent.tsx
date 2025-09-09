@@ -1,17 +1,21 @@
-import { Box, Stack, Typography, Chip, Divider, Button } from "@mui/material";
+import { Box, Stack, Typography, Chip, Divider, Button, Icon, Tooltip, Zoom } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
-import { IProductList } from "../../interfaces/productos.interface";
+import { IProductList, IProductoUpdate } from "../../interfaces/productos.interface";
 import { useNavigate } from "react-router";
+import { updateProduct } from "../../services/productos.services";
+import { enqueueSnackbar } from "notistack";
+import { useState } from "react";
 
 export const ProductCard = ({ producto }: { producto: IProductList }) => {
 
   const navigate = useNavigate();
-
+  const [loader, setLoader] = useState(false);
+  const [stock, setStock] = useState(Number(producto.existencia) > 0 ? `${producto.existencia} en stock` : "Agotado");
+  const [precio1, setPrecio1] = useState(producto.precio1);
+  const [precio2, setPrecio2] = useState(producto.precio2);
 
   const enStock = Number(producto.existencia) > 0;
-  const stockLabel = enStock
-    ? `${producto.existencia} en stock`
-    : "Agotado";
+ 
   
   
   
@@ -27,6 +31,35 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
     } catch (error) {
       console.error("Error al agregar al carrito:", error);
     }
+  };
+
+
+  // Funcion para actualizar la informacion del producto
+  const handleUpdateProduct = async () => {
+
+    setLoader(true);
+
+    try {
+
+      const response : IProductoUpdate = await updateProduct(producto.clave)
+      if(response.success){
+        enqueueSnackbar("Información del producto actualizado.", { variant: 'success'});
+        
+      }
+
+      // Actualizamos la info del producto en la tarjeta
+      setStock(Number(response.articulo.existencia) > 0 ? `${response.articulo.existencia} en stock` : "Agotado");
+      setPrecio1(response.articulo.precio1);
+      setPrecio2(response.articulo.precio2);
+
+    } catch (error) {
+      console.error("Error al agregar al carrito:", error);
+      enqueueSnackbar("Ocurrio un error al actualizar la información del producto.", { variant: 'error'});
+
+    } finally {
+      setLoader(false);
+    }
+
   };
 
 
@@ -64,7 +97,7 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
             {producto.descripcion}
           </Typography>
           <Chip
-            label={stockLabel}
+            label={stock}
             size="small"
             sx={{
               backgroundColor: enStock ? "#026da3" : "#dc3545",
@@ -103,7 +136,7 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
             Precio 1:
           </Typography>
           <Typography variant="body1" fontWeight="bold">
-            ${Number(producto.precio1).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+            ${Number(precio1).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
           </Typography>
         </Box>
         <Box display="flex" justifyContent="space-between">
@@ -115,30 +148,52 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
             fontWeight="bold"
             sx={{ color: "#28a745" }}
           >
-            ${Number(producto.precio2).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+            ${Number(precio2).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
           </Typography>
         </Box>
       </Stack>
 
       {/* 🔹 Botón siempre abajo */}
-      <Box>
-        <Button
-          fullWidth
-          startIcon={<AddShoppingCartIcon />}
-          onClick={handleAddToCart}
-          color="inherit"
-          variant="contained"
-          sx={{
-            mt: 3,
-            mb: 1.5,
-            backgroundColor: "black",
-            color: "white",
-            "&:hover": { backgroundColor: "#333" },
-          }}
-        >
-          Cotizar producto
-        </Button>
-      </Box>
+      <Stack direction="row" spacing={0.5} mt={3}>
+        
+        <Tooltip title="Cotizar producto" slots={{ transition: Zoom }} placement="top">   
+          <Button
+            startIcon={<AddShoppingCartIcon />}
+            onClick={handleAddToCart}
+            variant="contained"
+            size="small"
+            sx={{
+              flex: 1,
+              mt: 3,
+              mb: 1.5,
+              fontSize: 9,
+              backgroundColor: "black",
+              color: "white",
+              "&:hover": { backgroundColor: "#333" },
+            }}
+          >
+            Cotizar producto
+          </Button>
+        </Tooltip>
+        
+        <Tooltip title="Actualizar producto" slots={{ transition: Zoom }} placement="top">   
+          <Button
+            onClick={handleUpdateProduct}
+            disabled={loader}
+            size="small"
+            sx={{
+              backgroundColor: "black",
+              color: "white",
+              "&:hover": { backgroundColor: "#333" },
+              ":disabled": { backgroundColor: "#555", color: "#ccc", cursor: "not-allowed" }
+            }}
+          >
+            <Icon fontSize="small">autorenew</Icon>
+          </Button>
+        </Tooltip>
+
+      </Stack>
+
     </Box>
   );
 };
