@@ -17,6 +17,7 @@ import {
     FormLabel,
     FormControl,
     Modal,
+    IconButton,
 } from "@mui/material";
 import Radio from '@mui/material/Radio';
 import Grid from '@mui/material/Grid2';
@@ -129,13 +130,91 @@ export function CrearPedidoPage() {
             headerClassName: '--header-table'
         },
         {
-            headerName: 'Cantidad',
-            field: 'cantidad',
-            type: 'number',
-            align: 'center',
-            width: 150,
-            headerAlign: 'center',
-            headerClassName: '--header-table'
+            headerName: "Cantidad",
+            field: "cantidad",
+            type: "number",
+            align: "center",
+            width: 200,
+            headerAlign: "center",
+            headerClassName: "--header-table",
+            renderCell: (params) => {
+                const [value, setValue] = React.useState<string>(
+                    params.row.cantidad?.toString() || "0"
+                );
+
+                const updateCantidad = (newCantidad: number) => {
+                    setProductosAgregados((prev) => {
+                        const updated = prev.map((item) =>
+                        item.id === params.row.id
+                            ? { ...item, cantidad: newCantidad }
+                            : item
+                        );
+
+                        // guardar en localStorage
+                        localStorage.setItem("productosAgregados", JSON.stringify(updated));
+
+                        return updated;
+                    });
+                };
+
+                // Aumentar
+                const handleIncrease = () => {
+                const newVal = Number(value) + 1;
+                setValue(newVal.toString());
+                updateCantidad(newVal);
+                };
+
+                // Disminuir
+                const handleDecrease = () => {
+                const newVal = Math.max(Number(value) - 1, 0);
+                setValue(newVal.toString());
+                updateCantidad(newVal);
+                };
+
+                // Cambiar manualmente
+                const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const val = e.target.value;
+                if (val === "" || /^[0-9\b]+$/.test(val)) {
+                    setValue(val); // Permitir vacío mientras escribe
+                }
+                };
+
+                // Confirmar al salir del input
+                const handleBlur = () => {
+                const numericValue = value === "" ? 0 : parseInt(value, 10);
+                setValue(numericValue.toString());
+                updateCantidad(numericValue);
+                };
+
+                return (
+                <Box display="flex" alignItems="center" gap={1}>
+                    <IconButton
+                        size="small"
+                        onClick={handleDecrease}
+                        sx={{ border: "1px solid #ccc" }}
+                    >
+                        <Icon>remove</Icon>
+                    </IconButton>
+
+                    <TextField
+                        type="number"
+                        value={value}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        inputProps={{ style: { textAlign: "center", width: "60px" } }}
+                        size="small"
+                    />
+
+                    <IconButton
+                        size="small"
+                        onClick={handleIncrease}
+                        sx={{ border: "1px solid #ccc" }}
+                    >
+                        <Icon>add</Icon>
+                    </IconButton>
+                </Box>
+                );
+            },
         },
         {
             headerName: 'Acciones',

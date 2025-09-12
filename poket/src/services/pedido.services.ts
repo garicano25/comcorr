@@ -21,12 +21,24 @@ export const createPedidoService = (data: IPayloadPedido) => {
   });
 };
 
-// Tabla de pedidos
-export const listPedidos = (page: number, limit: number) => {
+// Tabla de pedidos (con filtros)
+export const listPedidos = (page: number, limit: number, filtros: any = {}) => {
   return new Promise<IResponseGetPedidos>(async (resolve, reject) => {
     try {
+      const params: any = {
+        page,
+        limit,
+        ...filtros, // Agregamos los filtros directamente como query params
+      };
+
+      // Renombramos correctamente los campos para que coincidan con lo que espera el backend
+      if (params.vendedor_id) {
+        params.usuario_id = params.vendedor_id;
+        delete params.vendedor_id;
+      }
+
       const response: AxiosResponse = await clientAdmin.get("/pedidos", {
-        params: { page, limit },
+        params,
       });
       resolve(response.data);
     } catch (e) {

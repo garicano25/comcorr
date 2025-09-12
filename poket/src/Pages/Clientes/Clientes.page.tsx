@@ -5,12 +5,12 @@ import { esES } from "@mui/x-data-grid/locales";
 import { decodeToken } from "../../utils/options.token";
 import { IUser } from "../../interfaces/user.interface";
 import { useSnackbar } from "notistack";
-import { createAddressClient, createClientService, getClientes } from "../../services/clientes.services";
+import { createAddressClient, createClientService, getClientes, syncClientes } from "../../services/clientes.services";
 import { ICliente, IDataClientes, IResponseCreateAddress, IResponseCreateCliente } from "../../interfaces/catalogos.interface";
 import { styleModal } from "../../utils/styles.aditional";
 
 export function ClientesPage() {
-    
+
     const [pending, setPending] = useState(true);
     const [rows, setRows] = useState<ICliente[]>([]);
     const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
@@ -25,10 +25,10 @@ export function ClientesPage() {
     //Cliente
     const handleClose = () => setOpen(false);
     const handleOpen = () => setOpen(true);
-    
+
     //Direccion
     const handleClose2 = () => setOpen2(false);
-    const handleOpen2 = (row:ICliente) => {
+    const handleOpen2 = (row: ICliente) => {
         setClienteSeleccionado(row)
         setOpen2(true)
     };
@@ -37,16 +37,16 @@ export function ClientesPage() {
         page: 0,
         pageSize: 10,
     });
-    
-    const token : IUser | null = decodeToken();
-  
+
+    const token: IUser | null = decodeToken();
+
     const useIsMobile = () => {
         const theme = useTheme();
         return useMediaQuery(theme.breakpoints.down('sm'));
     };
 
 
-    
+
     const isMobile = useIsMobile();
     const columns: GridColDef[] = [
         {
@@ -91,18 +91,36 @@ export function ClientesPage() {
                         <Icon>add_location_alt</Icon> Agregar
                     </Button>
                 </Tooltip>
-                
+
             ),
         },
     ];
 
+    // Función para sincronizar y luego cargar los clientes
+    const handleSyncClientes = async () => {
+        setPending(true);
+        try {
+            const res = await syncClientes(); // ← ahora sí retorna { success: true }
+            if (res.success) {
+                enqueueSnackbar("Clientes sincronizados correctamente", { variant: 'success' });
+                await loadClientes();
+            } else {
+                enqueueSnackbar("Error al sincronizar clientes", { variant: 'error' });
+            }
+        } catch (error) {
+            console.error("Error al sincronizar clientes:", error);
+            enqueueSnackbar("Error al sincronizar clientes", { variant: 'error' });
+        } finally {
+            setPending(false);
+        }
+    };
 
     // Funcion para Obtencion de clientes
     const loadClientes = async () => {
         setPending(true);
         try {
 
-            const data : IDataClientes = await getClientes(paginationModel.page + 1, paginationModel.pageSize, '');
+            const data: IDataClientes = await getClientes(paginationModel.page + 1, paginationModel.pageSize, '');
             setRows(data.clientes);
             setRowCount(data.totalRecords);
 
@@ -113,30 +131,30 @@ export function ClientesPage() {
 
 
     //Funcion para crear una nueva dirreccion
-    const createClient = async (data : {nombre:string, rfc:string, telefono:string, vendedor: number}) => {
-        
+    const createClient = async (data: { nombre: string, rfc: string, telefono: string, vendedor: number }) => {
+
         setSaveClient(true)
-        
+
         try {
             const response: IResponseCreateCliente = await createClientService(data);
-            
+
             if (response.success) {
-                
+
                 handleClose();
                 loadClientes()
-            
+
             } else {
 
                 enqueueSnackbar("Error al intentar crear un nuevo cliente, por favor intente nuevamente", { variant: 'error' });
-                
+
             }
-            
+
         } catch (error) {
             console.error("Error al guardar la nueva dirreccion", error);
             enqueueSnackbar("Error al intentar crear un nuevo cliente, por favor intente nuevamente", { variant: 'error' });
 
             return [];
-        
+
         } finally {
 
             setSaveClient(false)
@@ -145,36 +163,36 @@ export function ClientesPage() {
 
 
     //Funcion para crear una nueva dirreccion
-    const createAddresClient = async (data : {direccion:string, telefono:string}) => {
-        
+    const createAddresClient = async (data: { direccion: string, telefono: string }) => {
+
         const id = Number(clienteSeleccionado?.id)
 
         setSaveAddress(true)
-        
+
         try {
             const response: IResponseCreateAddress = await createAddressClient(data, id);
             handleClose();
-            
+
             if (response.success) {
                 handleClose2()
                 enqueueSnackbar("Dirección agregada con exito", { variant: 'success' });
 
             } else {
                 enqueueSnackbar("Error al crear una nueva dirección", { variant: 'error' });
-                
+
             }
-            
+
         } catch (error) {
             console.error("Error al guardar la nueva dirreccion", error);
             return [];
-        
+
         } finally {
 
             setSaveAddress(false)
         }
     }
 
-    
+
     useEffect(() => {
         loadClientes();
         setColumnVisibilityModel({
@@ -196,21 +214,38 @@ export function ClientesPage() {
                 fontWeight: 900
             },
         }}>
-            <Button
-                type="submit"
-                variant="contained"
-                onClick={handleOpen}
+            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                <Button
+                    type="button"
+                    variant="contained"
+                    onClick={handleOpen}
+                    sx={{
+                        bgcolor: "primary.main",
+                        "&:hover": { bgcolor: "primary.dark" },
+                        color: "white",
+                        borderRadius: 2,
+                    }}
+                >
+                    <Icon>group_add</Icon> Nuevo cliente
+                </Button>
 
-                sx={{
-                    bgcolor: "primary.main",
-                    "&:hover": { bgcolor: "primary.dark" },
-                    color: "white",
-                    borderRadius: 2,
-                    marginBottom:3
-                }}
-            >
-                <Icon>group_add</Icon> Nuevo cliente
-            </Button>
+                <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={handleSyncClientes}
+                    sx={{
+                        borderRadius: 2,
+                        color: "primary.main",
+                        borderColor: "primary.main",
+                        "&:hover": {
+                            borderColor: "primary.dark",
+                            bgcolor: "primary.light",
+                        },
+                    }}
+                >
+                    <Icon>refresh</Icon> Actualizar
+                </Button>
+            </Box>
 
 
 
@@ -226,7 +261,7 @@ export function ClientesPage() {
                 localeText={esES.components.MuiDataGrid.defaultProps.localeText}
                 columnVisibilityModel={columnVisibilityModel}
             />
-                
+
 
             {/* Modal Create Client */}
             <Modal
@@ -293,7 +328,7 @@ export function ClientesPage() {
 
 
             {/* Modal Add Address */}
-             <Modal
+            <Modal
                 open={open2}
                 onClose={handleClose2}
                 aria-labelledby="modal-modal-title"
@@ -343,7 +378,7 @@ export function ClientesPage() {
                     </Box>
                 </Box>
             </Modal>
-   
+
         </Box>
     )
 }

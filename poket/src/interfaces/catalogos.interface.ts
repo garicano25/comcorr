@@ -1,8 +1,8 @@
 export interface INotificaciones {
-    id: number,
-    titulo: string,
-    texto: string,
-    hora: string
+  id: number;
+  titulo: string;
+  texto: string;
+  hora: string;
 }
 
 export interface ICliente {
@@ -12,28 +12,40 @@ export interface ICliente {
   telefono_particular: string;
 }
 
-
-export interface IDataClientes{
-    success: boolean,
-    page: number,
-    limit: number,
-    totalRecords: number,
-    totalPages: number,
-    clientes : ICliente[] 
+export interface IDataClientes {
+  success: boolean;
+  page: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+  clientes: ICliente[];
 }
 
-export interface IDataAddress{
-    id: number;
-    direccion: string;
-    telefono: string;
-    fecha_creacion:string
+export interface IDataAddress {
+  id: number;
+  direccion: string;
+  telefono: string;
+  fecha_creacion: string;
 }
 
-export interface IResponseCreateAddress{
-    success: boolean,
-    direccion_id: number
+export interface IResponseCreateAddress {
+  success: boolean;
+  direccion_id: number;
 }
-export interface IResponseCreateCliente{
-    success: boolean,
-    cliente_id: number
+export interface IResponseCreateCliente {
+  success: boolean;
+  cliente_id: number;
+}
+export interface IVendedor {
+  id: number;
+  email: string;
+}
+
+export interface IDataVendedores {
+  success: boolean;
+  page: number;
+  limit: number;
+  totalRecords: number;
+  totalPages: number;
+  vendedores: IVendedor[];
 }

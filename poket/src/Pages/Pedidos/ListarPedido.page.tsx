@@ -1,38 +1,79 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { esES } from '@mui/x-data-grid/locales';
+
 import { useNavigate } from "react-router";
 import { useParamsRoute } from "../../context/ParamsRouteContext";
-import { Box, Button, Chip, Icon, Menu, MenuItem, Tooltip, useMediaQuery, useTheme, Zoom } from "@mui/material";
+import {
+    Box, Button, Chip, Icon, Menu, MenuItem, TextField, Tooltip,
+    useMediaQuery, useTheme, Zoom, CircularProgress
+} from "@mui/material";
+import Autocomplete from '@mui/material/Autocomplete';
 import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
-import { esES } from "@mui/x-data-grid/locales";
-import { IListPedidos, IResponseEstatusPedido, IResponseInfoPedido } from "../../interfaces/pedidos.interface";
-import { aprovePedidoService, declinePedidoService, getInfoPedido, listPedidos } from "../../services/pedido.services";
+import {
+    IListPedidos,
+    IResponseEstatusPedido,
+    IResponseInfoPedido
+} from "../../interfaces/pedidos.interface";
+import {
+    aprovePedidoService,
+    declinePedidoService,
+    getInfoPedido,
+    listPedidos
+} from "../../services/pedido.services";
+import {
+    getClientesAll,
+    getVendedores
+} from "../../services/clientes.services";
 import { useAlert } from "../../context/AlertProviderContext";
 import { decodeToken } from "../../utils/options.token";
 import { IUser } from "../../interfaces/user.interface";
-import React from "react";
 import { useSnackbar } from "notistack";
 import { formatDate } from "../../utils/function.global";
 
 export function ListarPedidoPage() {
-
-    
     const [pending, setPending] = useState(true);
     const { setAlert } = useAlert();
     const [rows, setRows] = useState<IListPedidos[]>([]);
+    const [rowCount, setRowCount] = useState<number>(0);
     const navigate = useNavigate();
     const { setParams } = useParamsRoute();
-    const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
     const { enqueueSnackbar } = useSnackbar();
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const [selectedRow, setSelectedRow] = useState<any>(null);
-     const [rowCount, setRowCount] = useState<number>(0);
+
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
         page: 0,
         pageSize: 10,
     });
-    
-    const open = Boolean(anchorEl)
-    const token : IUser | null = decodeToken();
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [selectedRow, setSelectedRow] = useState<any>(null);
+    const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
+
+    const open = Boolean(anchorEl);
+    const token: IUser | null = decodeToken();
+
+    // Filtros
+    const [filtros, setFiltros] = useState({
+        estado: '',
+        cliente_id: '',
+        vendedor_id: '',
+        fecha: ''
+    });
+
+    const useIsMobile = () => {
+        const theme = useTheme();
+        return useMediaQuery(theme.breakpoints.down('sm'));
+    };
+    const isMobile = useIsMobile();
+
+    const capitalize = (text: string) => {
+        if (!text) return '';
+        return text.charAt(0).toUpperCase() + text.slice(1);
+    };
+
+    const verDetallesPedido = (id: string) => {
+        setParams(id);
+        navigate(`/consultar-pedido/${id}`);
+    };
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>, row: any) => {
         setAnchorEl(event.currentTarget);
@@ -43,118 +84,80 @@ export function ListarPedidoPage() {
         setAnchorEl(null);
     };
 
-    
-    const useIsMobile = () => {
-        const theme = useTheme();
-        return useMediaQuery(theme.breakpoints.down('sm'));
-    };
+    const [clientesOptions, setClientesOptions] = useState<{ id: number; nombre: string }[]>([]);
+    const [vendedoresOptions, setVendedoresOptions] = useState<{ id: number; nombre: string }[]>([]);
+    const [loadingClientes, setLoadingClientes] = useState(false);
 
-    const capitalize = (text: string) => {
-        if (!text) return '';
-        return text.charAt(0).toUpperCase() + text.slice(1);
-    };
-
-
-    const showAlert =  async (id: number) => {
-
-        const hasProductAprove = await loadInfoPedido(id);
-
-        if (hasProductAprove) {
-               setAlert({
-                   title: 'No disponible',
-                   text: 'El pedido tiene articulos con precios convenidos sin confirmar.',
-                   open: true,
-                   time: 2500,
-                   icon: 'warning',
-               });
-            return;
-        }
-
-        if (token) {
-            if (token.role === 1) {
-                setAlert({
-                    title: '¿Está seguro de aprobar este pedido?',
-                    text: 'Es necesario confirmar para continuar.',
-                    open: true,
-                    icon: 'question',
-                    onConfirm: () => aprovePedido(id),
-                });
-               
-            } else {
-                   setAlert({
-                   title: 'No tiene permiso para realizar esta acción',
-                   text: 'Si crees que es un error comunicate con el responsable.',
-                   open: true,
-                   time: 2000,
-                   icon: 'warning',
-                });
+    useEffect(() => {
+        const fetchVendedores = async () => {
+            try {
+                const res = await getVendedores('');
+                const opciones = (res.vendedores || []).map((vendedor: any) => ({
+                    id: vendedor.id,
+                    nombre: vendedor.email || vendedor.name || 'Sin nombre',
+                }));
+                setVendedoresOptions(opciones);
+            } catch (error) {
+                enqueueSnackbar("Error al cargar vendedores", { variant: "error" });
             }
+        };
+        fetchVendedores();
+    }, []);
 
-        } else {
-            setAlert({
-                title: 'No tiene permiso para realizar esta acción',
-                text: 'Si crees que es un error comunicate con el responsable.',
-                open: true,
-                time: 2000,
-                icon: 'warning',
-            });
+
+    // Función para buscar clientes en autocomplete
+    const buscarClientes = async (search: string) => {
+        setLoadingClientes(true);
+        try {
+            const res = await getClientesAll(search);
+            setClientesOptions(
+                (res.clientes || []).map(cliente => ({
+                    id: cliente.id,
+                    nombre: cliente.razon_social // Ajusta esto al nombre correcto
+                }))
+            );
+        } catch (error) {
+            enqueueSnackbar("Error al buscar clientes", { variant: "error" });
+        } finally {
+            setLoadingClientes(false);
         }
-
     };
 
-    const showAlertDecline = (id: number) => {
-        if (token) {
-            
-            if (token.role === 1) {
-                setAlert({
-                    title: '¿Está seguro de cancelar este pedido?',
-                    text: 'Es necesario confirmar para continuar.',
-                    open: true,
-                    icon: 'question',
-                    onConfirm: () => declinePedido(id),
-                });
-               
-            } else {
-                   setAlert({
-                   title: 'No tiene permiso para realizar esta acción',
-                   text: 'Si crees que es un error comunicate con el responsable.',
-                   open: true,
-                   time: 2000,
-                   icon: 'warning',
-                });
-            }
 
-        } else {
-            setAlert({
-                title: 'No tiene permiso para realizar esta acción',
-                text: 'Si crees que es un error comunicate con el responsable.',
-                open: true,
-                time: 2000,
-                icon: 'warning',
-            });
-        }
-
+    // Maneja el cambio de filtro de cliente en autocomplete
+    const handleClienteChange = (value: any) => {
+        setFiltros(prev => ({ ...prev, cliente_id: value ? String(value.id) : '' }));
     };
 
-    
-    const isMobile = useIsMobile();
+    // Maneja el input change para disparar búsqueda clientes
+    const handleClienteInputChange = (event: any, value: string) => {
+        console.log(event)
+        if (value.length >= 2) {
+            buscarClientes(value);
+        } else {
+            setClientesOptions([]);
+            setFiltros(prev => ({ ...prev, cliente_id: '' }));
+        }
+    };
+
+    // Maneja cambio de vendedor
+    const handleVendedorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFiltros(prev => ({ ...prev, vendedor_id: event.target.value }));
+    };
+
+    // Maneja cambio de estado
+    const handleEstadoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFiltros(prev => ({ ...prev, estado: event.target.value }));
+    };
+
+    // Maneja cambio de fecha
+    const handleFechaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFiltros(prev => ({ ...prev, fecha: event.target.value }));
+    };
+
     const columns: GridColDef[] = [
-        {
-            headerName: 'No. Pedido',
-            field: 'id',
-            type: 'number',
-            width: 140,
-            align: 'center',
-            headerAlign: 'center',
-            headerClassName: '--header-table',
-        },
-        {
-            headerName: 'Cliente',
-            field: 'cliente_nombre',
-            type: 'string',
-            ...(!isMobile ? { flex: 2 } : { width: 350 }),
-            headerClassName: '--header-table',
-        },
+        { headerName: 'No. Pedido', field: 'id', type: 'number', width: 140, align: 'center', headerAlign: 'center', headerClassName: '--header-table' },
+        { headerName: 'Cliente', field: 'cliente_nombre', type: 'string', ...(isMobile ? { width: 350 } : { flex: 2 }), headerClassName: '--header-table' },
         {
             headerName: 'Fecha de solicitud',
             field: 'fecha_creacion',
@@ -163,31 +166,25 @@ export function ListarPedidoPage() {
             headerClassName: '--header-table',
             renderCell: (params) => formatDate(params.value)
         },
-          {
-            headerName: 'Creado por',
-            field: 'Creado_por',
-            type: 'string',
-            width: 150,
-            headerClassName: '--header-table',
-        },
+        { headerName: 'Creado por', field: 'Creado_por', type: 'string', width: 150, headerClassName: '--header-table' },
         {
             headerName: 'Estatus',
             field: 'estado',
             type: 'singleSelect',
-            valueOptions: ["aceptado","en proceso" ,"rechazado"],
-            editable: true,
+            valueOptions: ["aceptado", "en proceso", "cancelado"],
+            editable: false,
             width: 180,
-            headerClassName: '--header-table',
             align: 'center',
             headerAlign: 'center',
+            headerClassName: '--header-table',
             renderCell: (params) => (
-               <Chip
+                <Chip
                     label={capitalize(params.value)}
                     color={
                         params.value === 'aceptado' ? 'success' :
-                        params.value === 'en proceso' ? 'warning' :
-                        params.value === 'cancelado' ? 'error' :
-                        'default'
+                            params.value === 'en proceso' ? 'warning' :
+                                params.value === 'cancelado' ? 'error' :
+                                    'default'
                     }
                 />
             ),
@@ -197,47 +194,32 @@ export function ListarPedidoPage() {
             field: 'Pedido',
             disableColumnMenu: true,
             sortable: false,
-            ...(!isMobile ? { flex: 1 } : { width: 100 }),
+            ...(isMobile ? { width: 100 } : { flex: 1 }),
             align: 'center',
             headerAlign: 'center',
             headerClassName: '--header-table',
             renderCell: (params) => (
                 <div>
                     <Button
-                        disabled={params.row.estado === 'aceptado' || params.row.estado === 'cancelado' || token?.role != 1}
-                        id="basic-button"
-                        aria-controls={open ? 'basic-menu' : undefined}
-                        aria-haspopup="true"
-                        aria-expanded={open ? 'true' : undefined}
-                         onClick={(event) => handleClick(event, params.row)}
+                        disabled={params.row.estado === 'aceptado' || params.row.estado === 'cancelado' || token?.role !== 1}
+                        onClick={(event) => handleClick(event, params.row)}
                         variant="text"
                     >
-                        {params.row.estado === 'aceptado'
-                            ? <><Icon>check_circle</Icon></>
-                            : params.row.estado === 'cancelado' ?<> <Icon>cancel</Icon></>  : <><Icon>menu</Icon></>}  
+                        {params.row.estado === 'aceptado' ? <Icon>check_circle</Icon> :
+                            params.row.estado === 'cancelado' ? <Icon>cancel</Icon> :
+                                <Icon>menu</Icon>}
                     </Button>
                     <Menu
-                        id="basic-menu"
                         anchorEl={anchorEl}
                         open={open}
                         onClose={handleClose}
-                        slotProps={{
-                        list: {
-                            'aria-labelledby': 'basic-button',
-                        },
-                        }}
                     >
-                        <MenuItem onClick={() => { 
-                            if (selectedRow) {
-                                showAlert(selectedRow.id);
-                            }
+                        <MenuItem onClick={() => {
+                            if (selectedRow) showAlert(selectedRow.id);
                             handleClose();
-                        }}
-                        >Aprobar</MenuItem>
-                        <MenuItem onClick={() => { 
-                            if (selectedRow) {
-                                showAlertDecline(selectedRow.id);
-                            }
+                        }}>Aprobar</MenuItem>
+                        <MenuItem onClick={() => {
+                            if (selectedRow) showAlertDecline(selectedRow.id);
                             handleClose();
                         }}>Cancelar</MenuItem>
                     </Menu>
@@ -249,7 +231,7 @@ export function ListarPedidoPage() {
             field: 'acciones',
             disableColumnMenu: true,
             sortable: false,
-            ...(!isMobile ? { flex: 1 } : { width: 100 }),
+            ...(isMobile ? { width: 100 } : { flex: 1 }),
             align: 'center',
             headerAlign: 'center',
             headerClassName: '--header-table',
@@ -258,135 +240,130 @@ export function ListarPedidoPage() {
                     <Button
                         variant="text"
                         onClick={() => verDetallesPedido(params.row.id)}
-                        sx={{ color: 'black', ml: 1, boxShadow: 'none' }}
+                        sx={{ color: 'black', ml: 1 }}
                     >
-                        <Icon>description</Icon> 
+                        <Icon>description</Icon>
                     </Button>
                 </Tooltip>
-                
             ),
         },
     ];
 
-    const verDetallesPedido = (id: string) => {
-        setParams(id)
-        navigate(`/consultar-pedido/${id}`);
-    }
-
-
-    // Funcion para Obtencion de pedidos
     const getPedidos = async () => {
         setPending(true);
         try {
-
-            const data = await listPedidos(paginationModel.page + 1, paginationModel.pageSize);
+            const data = await listPedidos(
+                paginationModel.page + 1,
+                paginationModel.pageSize,
+                filtros
+            );
             setRows(data.pedidos);
             setRowCount(data.totalRecords);
-
+        } catch (error) {
+            console.error('Error al obtener pedidos:', error);
+            enqueueSnackbar("Error al obtener pedidos", { variant: "error" });
         } finally {
             setPending(false);
         }
     };
 
-
-    // Funcion para aprobar un pedido
     const aprovePedido = async (id: number) => {
-
         try {
-            
-            const data : IResponseEstatusPedido = await aprovePedidoService(id);
+            const data: IResponseEstatusPedido = await aprovePedidoService(id);
             if (data.success) {
-                
-                setAlert({
-                    title: data.mensaje,
-                    text: 'Pedido Aprobado',
-                    open: true,
-                    icon: 'success',
-                });
-
-                getPedidos()
-
+                setAlert({ title: data.mensaje, text: 'Pedido Aprobado', open: true, icon: 'success' });
+                getPedidos();
             } else {
-
-                setAlert({
-                    title: data.mensaje,
-                    text: 'Valide la información o intente nuevamente',
-                    open: true,
-                    icon: 'warning',
-                });
-
+                setAlert({ title: data.mensaje, text: 'Valide la información o intente nuevamente', open: true, icon: 'warning' });
             }
-
         } catch (error) {
-
-            console.log('Error al aprobar pedido: ' + error);
-            enqueueSnackbar("Hubo un error al intentar aprovar el pedido intente nuevamente.", { variant: 'error' });
-
-        } 
-    }
-
-    // Funcion para Rechazar un pedido
-    const declinePedido = async (id: number) => {
-
-        try {
-            
-            const data : IResponseEstatusPedido = await declinePedidoService(id);
-            if (data.success) {
-                
-                setAlert({
-                    title: data.mensaje,
-                    text: 'Pedido Rechazado',
-                    open: true,
-                    icon: 'success',
-                });
-
-                getPedidos()
-
-            } else {
-
-                setAlert({
-                    title: data.mensaje,
-                    text: 'Valide la información o intente nuevamente',
-                    open: true,
-                    icon: 'warning',
-                });
-
-            }
-
-        } catch (error) {
-
-            console.log('Error al rechazar pedido: ' + error);
-            enqueueSnackbar("Hubo un error al intentar rechazar el pedido intente nuevamente.", { variant: 'error'});
-
-        } 
-    }
-
-
-    // Función que valida si hay productos pendientes de aprobación
-    const hasPendienteConAprobacion = (articulos: any[]): boolean => {
-        return articulos.some(
-            (item) => item.requiere_aprobacion === 1 && item.estado === "pendiente"
-        );
+            console.log('Error al aprobar pedido:', error);
+            enqueueSnackbar("Error al aprobar el pedido.", { variant: 'error' });
+        }
     };
 
+    const declinePedido = async (id: number) => {
+        try {
+            const data: IResponseEstatusPedido = await declinePedidoService(id);
+            if (data.success) {
+                setAlert({ title: data.mensaje, text: 'Pedido Cancelado', open: true, icon: 'success' });
+                getPedidos();
+            } else {
+                setAlert({ title: data.mensaje, text: 'Valide la información o intente nuevamente', open: true, icon: 'warning' });
+            }
+        } catch (error) {
+            console.log('Error al cancelar pedido:', error);
+            enqueueSnackbar("Error al cancelar el pedido.", { variant: 'error' });
+        }
+    };
 
-    // Obtencios de la información del pedido por idPedido
-   const loadInfoPedido = async (idPedido: number) => {
+    const hasPendienteConAprobacion = (articulos: any[]): boolean => {
+        return articulos.some((item) => item.requiere_aprobacion === 1 && item.estado === "pendiente");
+    };
+
+    const loadInfoPedido = async (idPedido: number) => {
         try {
             const response: IResponseInfoPedido = await getInfoPedido({ idPedido: Number(idPedido) });
-
-            const porAprobar = hasPendienteConAprobacion(response.articulos);
-
-            return porAprobar;
-
+            return hasPendienteConAprobacion(response.articulos);
         } catch (error) {
-            console.log('Error al consultar la informacion del pedido: ' + error);
-            enqueueSnackbar("Hubo un error al intentar consultar los articulos del pedido, intente nuevamente.", { variant: 'error' });
+            console.log('Error al consultar info del pedido:', error);
+            enqueueSnackbar("Error al consultar los artículos del pedido.", { variant: 'error' });
             return false;
         }
     };
 
-    
+    const showAlert = async (id: number) => {
+        const tienePendientes = await loadInfoPedido(id);
+        if (tienePendientes) {
+            setAlert({
+                title: 'No disponible',
+                text: 'El pedido tiene artículos con precios convenidos sin confirmar.',
+                open: true,
+                icon: 'warning',
+                time: 2500
+            });
+            return;
+        }
+
+        if (token?.role === 1) {
+            setAlert({
+                title: '¿Está seguro de aprobar este pedido?',
+                text: 'Es necesario confirmar para continuar.',
+                open: true,
+                icon: 'question',
+                onConfirm: () => aprovePedido(id)
+            });
+        } else {
+            setAlert({
+                title: 'No tiene permiso',
+                text: 'Comuníquese con el administrador.',
+                open: true,
+                icon: 'warning',
+                time: 2000
+            });
+        }
+    };
+
+    const showAlertDecline = (id: number) => {
+        if (token?.role === 1) {
+            setAlert({
+                title: '¿Está seguro de cancelar este pedido?',
+                text: 'Es necesario confirmar para continuar.',
+                open: true,
+                icon: 'question',
+                onConfirm: () => declinePedido(id)
+            });
+        } else {
+            setAlert({
+                title: 'No tiene permiso',
+                text: 'Comuníquese con el administrador.',
+                open: true,
+                icon: 'warning',
+                time: 2000
+            });
+        }
+    };
+
     useEffect(() => {
         getPedidos();
         setColumnVisibilityModel({
@@ -397,11 +374,10 @@ export function ListarPedidoPage() {
             estado: true,
             acciones: true,
         });
-    }, [isMobile, paginationModel]);
-
+    }, [isMobile, paginationModel, filtros]);
 
     return (
-        <Box component="div" sx={{
+        <Box sx={{
             mt: 5,
             width: '100%',
             overflowX: 'auto',
@@ -410,27 +386,112 @@ export function ListarPedidoPage() {
                 fontWeight: 900
             },
         }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <DataGrid
-                    rows={rows}
-                    columns={columns}
-                    loading={pending}
-                    paginationMode="server"
-                    rowCount={rowCount}
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={setPaginationModel}
-                    pageSizeOptions={[10, 25, 50, 100]}
-                    localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-                    columnVisibilityModel={columnVisibilityModel}
-                />
-                
-            </div>
-            {/* <div>
-                <Backdrop sx={(theme) => ({ color: '#000000', zIndex: theme.zIndex.drawer + 1 })} open={openBackdrop}>
-                        <CircularProgress color="inherit" size='100px' />
-                </Backdrop>
-            </div> */}
-   
+            {/* Filtros */}
+            {/* Filtros (solo para rol 1) */}
+            {token?.role === 1 && (
+                <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                    {/* Cliente Autocomplete */}
+                    <Autocomplete
+                        sx={{ minWidth: 250 }}
+                        size="small"
+                        options={clientesOptions}
+                        getOptionLabel={(option) => option.nombre}
+                        onChange={handleClienteChange}
+                        onInputChange={handleClienteInputChange}
+                        loading={loadingClientes}
+                        noOptionsText="No hay clientes"
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Cliente"
+                                InputProps={{
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <>
+                                            {loadingClientes ? <CircularProgress color="inherit" size={20} /> : null}
+                                            {params.InputProps.endAdornment}
+                                        </>
+                                    ),
+                                }}
+                            />
+                        )}
+                    />
+
+                    {/* Vendedor Dropdown */}
+                    <TextField
+                        select
+                        label="Vendedor"
+                        size="small"
+                        value={filtros.vendedor_id}
+                        onChange={handleVendedorChange}
+                        sx={{ minWidth: 150 }}
+                    >
+                        <MenuItem value="">Todos</MenuItem>
+                        {vendedoresOptions.map((vendedor) => (
+                            <MenuItem key={vendedor.id} value={String(vendedor.id)}>
+                                {vendedor.nombre}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
+                    {/* Estado Dropdown */}
+                    <TextField
+                        select
+                        label="Estado"
+                        size="small"
+                        value={filtros.estado}
+                        onChange={handleEstadoChange}
+                        sx={{ minWidth: 150 }}
+                    >
+                        <MenuItem value="">Todos</MenuItem>
+                        <MenuItem value="aceptado">Aceptado</MenuItem>
+                        <MenuItem value="en proceso">En proceso</MenuItem>
+                        <MenuItem value="cancelado">Cancelado</MenuItem>
+                    </TextField>
+
+                    {/* Fecha Input */}
+                    <TextField
+                        label="Fecha"
+                        size="small"
+                        type="date"
+                        value={filtros.fecha}
+                        onChange={handleFechaChange}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                        sx={{ minWidth: 150 }}
+                    />
+
+                    <Button
+                        variant="outlined"
+                        onClick={() => setFiltros({ estado: '', cliente_id: '', vendedor_id: '', fecha: '' })}
+                    >
+                        Limpiar filtros
+                    </Button>
+                </Box>
+            )}
+
+
+            {/* DataGrid */}
+            <DataGrid
+                sx={{
+                    borderRadius: 2,
+                    '& .MuiDataGrid-cell:focus': { outline: 'none' },
+                    '& .MuiDataGrid-row:hover': { backgroundColor: '#ebf1fc' },
+                }}
+                rows={rows}
+                columns={columns}
+                rowCount={rowCount}
+                paginationMode="server"
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                loading={pending}
+                autoHeight
+                localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                columnVisibilityModel={columnVisibilityModel}
+                onColumnVisibilityModelChange={setColumnVisibilityModel}
+                pageSizeOptions={[10, 25, 50]}
+            />
         </Box>
-    )
+    );
 }
