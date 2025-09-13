@@ -712,7 +712,7 @@ export function CrearPedidoPage() {
                                                             }}
                                                             />
                                                         }
-                                                        label={`$ ${productoSeleccionado.precio2 ? Number(productoSeleccionado.precio1).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : '0.00'}`}
+                                                        label={`$ ${productoSeleccionado.precio2 ? Number(productoSeleccionado.precio2).toLocaleString("es-MX", { minimumFractionDigits: 2 }) : '0.00'}`}
                                                         sx={{
                                                             background: '#fff',
                                                             borderRadius: '15px',
