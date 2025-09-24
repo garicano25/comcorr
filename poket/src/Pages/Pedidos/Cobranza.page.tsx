@@ -16,6 +16,7 @@ import {
 } from "../../interfaces/pedidos.interface";
 import {
     aprovePedidoService,
+    aprovePedidoCobranzaService,
     declinePedidoService,
     getInfoPedido,
     listPedidos
@@ -30,7 +31,7 @@ import { IUser } from "../../interfaces/user.interface";
 import { useSnackbar } from "notistack";
 import { formatDate } from "../../utils/function.global";
 
-export function ListarPedidoPage() {
+export function CobranzaPage() {
     const [pending, setPending] = useState(true);
     const { setAlert } = useAlert();
     const [rows, setRows] = useState<IListPedidos[]>([]);
@@ -73,7 +74,7 @@ export function ListarPedidoPage() {
 
     const verDetallesPedido = (id: string) => {
         setParams(id);
-        navigate(`/consultar-pedido/${id}`);
+        navigate(`/consultar-pedidoCobranza/${id}`);
     };
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>, row: any) => {
@@ -152,9 +153,10 @@ export function ListarPedidoPage() {
     };
 
     // Maneja cambio de fecha
-    const handleFechaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFechaInicioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, fecha: event.target.value }));
     };
+
     const handleFechaFinChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, fechafin: event.target.value }));
     };
@@ -205,11 +207,11 @@ export function ListarPedidoPage() {
             renderCell: (params) => (
                 <div>
                     <Button
-                        disabled={params.row.estado === 'aceptado' || params.row.estado === 'cancelado' || token?.role !== 1}
+                        disabled={params.row.estado === 'cobranza_aprobada' || params.row.estado === 'cancelado' || token?.role !== 1}
                         onClick={(event) => handleClick(event, params.row)}
                         variant="text"
                     >
-                        {params.row.estado === 'aceptado' ? <Icon>check_circle</Icon> :
+                        {params.row.estado === 'cobranza_aprobada' ? <Icon>check_circle</Icon> :
                             params.row.estado === 'cancelado' ? <Icon>cancel</Icon> :
                                 <Icon>menu</Icon>}
                     </Button>
@@ -221,7 +223,7 @@ export function ListarPedidoPage() {
                         <MenuItem onClick={() => {
                             if (selectedRow) showAlert(selectedRow.id);
                             handleClose();
-                        }}>Aprobar</MenuItem>
+                        }}>Aprobar por cobranza</MenuItem>
                         <MenuItem onClick={() => {
                             if (selectedRow) showAlertDecline(selectedRow.id);
                             handleClose();
@@ -273,7 +275,7 @@ export function ListarPedidoPage() {
 
     const aprovePedido = async (id: number) => {
         try {
-            const data: IResponseEstatusPedido = await aprovePedidoService(id);
+            const data: IResponseEstatusPedido = await aprovePedidoCobranzaService(id);
             if (data.success) {
                 setAlert({ title: data.mensaje, text: 'Pedido Aprobado', open: true, icon: 'success' });
                 getPedidos();
@@ -392,7 +394,7 @@ export function ListarPedidoPage() {
         }}>
             {/* Filtros */}
             {/* Filtros (solo para rol 1) */}
-            {token?.role === 1 && (
+            {(token?.role === 1 || token?.role === 6) && (
                 <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     {/* Cliente Autocomplete */}
                     <Autocomplete
@@ -438,36 +440,23 @@ export function ListarPedidoPage() {
                         ))}
                     </TextField>
 
-                    {/* Estado Dropdown */}
-                    <TextField
-                        select
-                        label="Estado"
-                        size="small"
-                        value={filtros.estado}
-                        onChange={handleEstadoChange}
-                        sx={{ minWidth: 150 }}
-                    >
-                        <MenuItem value="">Todos</MenuItem>
-                        <MenuItem value="cobranza_aprobada">Aceptado por cobranza</MenuItem>
-                        <MenuItem value="aceptado">Aceptado</MenuItem>
-                        <MenuItem value="en proceso">En proceso</MenuItem>
-                        <MenuItem value="cancelado">Cancelado</MenuItem>
-                    </TextField>
+
 
                     {/* Fecha Input */}
                     <TextField
-                        label="Fecha Inicio"
+                        label="Fecha"
                         size="small"
                         type="date"
                         value={filtros.fecha}
-                        onChange={handleFechaChange}
+                        onChange={handleFechaInicioChange}
                         InputLabelProps={{
                             shrink: true,
                         }}
                         sx={{ minWidth: 150 }}
                     />
+                    {/* Fecha Input */}
                     <TextField
-                        label="Fecha Fin"
+                        label="Fechafin"
                         size="small"
                         type="date"
                         value={filtros.fechafin}
@@ -477,7 +466,6 @@ export function ListarPedidoPage() {
                         }}
                         sx={{ minWidth: 150 }}
                     />
-
                     <Button
                         variant="outlined"
                         onClick={() => setFiltros({ estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '' })}

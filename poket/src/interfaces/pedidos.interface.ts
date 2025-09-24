@@ -29,6 +29,12 @@ export interface IPayloadPedido {
   articulos: IPayloadProductos[];
 }
 
+export interface IPayloadPedidoArt {
+  pedido_id: number;
+  comentarios: string;
+  articulos: IPayloadProductos[];
+}
+
 export interface IResponseCreatePedido {
   success: boolean;
   pedido_id: number;
@@ -43,7 +49,7 @@ export interface IListPedidos {
   direccion: string;
   cliente_id: number;
   fecha_creacion: string;
-  estado: "aceptado" | "en proceso" | "rechazado";
+  estado: "aceptado" | "en proceso" | "cancelado";
   requiere_aprobacion: number;
   aprobado_por: number;
   fecha_aprobacion: string;

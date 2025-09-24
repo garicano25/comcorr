@@ -1,6 +1,7 @@
 import { AxiosResponse } from "axios";
 import { clientAdmin } from "../interceptors/axios.client";
 import {
+  IPayloadPedidoArt,
   IPayloadPedido,
   IResponseCreatePedido,
   IResponseEstatusPedido,
@@ -21,6 +22,19 @@ export const createPedidoService = (data: IPayloadPedido) => {
   });
 };
 
+export const AddArtPedidoService = (data: IPayloadPedidoArt) => {
+  return new Promise<IResponseCreatePedido>(async (resolve, reject) => {
+    try {
+      const response: AxiosResponse = await clientAdmin.post(
+        "/AddArtpedidos",
+        data
+      );
+      resolve(response.data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 // Tabla de pedidos (con filtros)
 export const listPedidos = (page: number, limit: number, filtros: any = {}) => {
   return new Promise<IResponseGetPedidos>(async (resolve, reject) => {
@@ -53,6 +67,19 @@ export const aprovePedidoService = (id: number) => {
     try {
       const response: AxiosResponse = await clientAdmin.put(`/pedidos/${id}`, {
         estado: "aceptado",
+      });
+      resolve(response.data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+export const aprovePedidoCobranzaService = (id: number) => {
+  return new Promise<IResponseEstatusPedido>(async (resolve, reject) => {
+    try {
+      const response: AxiosResponse = await clientAdmin.put(`/pedidos/${id}`, {
+        estado: "cobranza_aprobada",
       });
       resolve(response.data);
     } catch (e) {

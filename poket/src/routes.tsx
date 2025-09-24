@@ -8,8 +8,10 @@ import { CrearPedidoPage } from "./Pages/Pedidos/CrearPedido.page"
 import { ListarPedidoPage } from "./Pages/Pedidos/ListarPedido.page"
 import { CotizacionPage } from "./Pages/Cotizacion/Cotizacion.page"
 import { ConsultarPedidoPage } from "./Pages/Pedidos/ConsultarPedido.page"
+import { ConsultarPedidoCobranza } from "./Pages/Pedidos/ConsultarPedidoCobranza.page"
 import { ProductosPage } from "./Pages/Productos/Productos.pge"
 import { ClientesPage } from "./Pages/Clientes/Clientes.page"
+import { CobranzaPage } from "./Pages/Pedidos/Cobranza.page"
 import UnauthorizedPage from "./Pages/UnauthorizedPage"
 
 export const WebRoutes = () => {
@@ -34,6 +36,9 @@ export const WebRoutes = () => {
                 <Route path="consultar-pedido" element={<ListarPedidoPage />} />
                 <Route path="consultar-pedido/:id" element={<ConsultarPedidoPage />} />
 
+                {/* cobranza */}
+                <Route path="cobranza" element={<CobranzaPage />} />
+                <Route path="consultar-pedidoCobranza/:id" element={<ConsultarPedidoCobranza />} />
 
                 {/* Roles y Configuraciones */}
                 <Route path="crear-rol" element={<CrearRolPage />} />

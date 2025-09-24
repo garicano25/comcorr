@@ -4,16 +4,10 @@ import { LoaderComponent } from "../../components/Globales/Loader.component";
 import {
   Box,
   Button,
-  Checkbox,
   CircularProgress,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
   Icon,
   IconButton,
   Modal,
-  Radio,
-  RadioGroup,
   TextField,
   Tooltip,
   Typography,
@@ -21,9 +15,6 @@ import {
   useTheme,
   Zoom,
 } from "@mui/material";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { motion } from "framer-motion";
 import { IArticulosPedido, IListPedidos, IResponseEstatusPedido, IResponseInfoPedido, IResponseSendEmail } from "../../interfaces/pedidos.interface";
 import { changeStatusArtService, getInfoPedido, sendEmailService, sendUpdateCommentService, sendUpdatePriceArt } from "../../services/pedido.services";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
@@ -35,14 +26,9 @@ import { useSnackbar } from "notistack";
 import DescargarPDF from "../../components/PDF/PdfCreate.component";
 import { formatDate } from "../../utils/function.global";
 import { styleModal } from "../../utils/styles.aditional";
-import AsyncSelect from "react-select/async";
-import { getProducts } from "../../services/productos.services";
-import { IProductListService } from "../../interfaces/productos.interface";
-import { AddArtPedidoService } from "../../services/pedido.services"; // importa tu servicio
 
 
-
-export function ConsultarPedidoPage() {
+export function ConsultarPedidoCobranza() {
   const params = useParams();
   const [pedido_id] = useState(params.id)
   const [articuloId, setArticuloId] = useState<number>(0)
@@ -59,115 +45,6 @@ export function ConsultarPedidoPage() {
   const totalGeneral = rows.reduce((acc, row) => acc + Number(row.total), 0);
   const [dataPedido, setDataPedido] = useState<IResponseInfoPedido>()
   const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
-  // Estado dentro del componente
-  const [selectedOption, setSelectedOption] = useState<any>(null);
-  const [productoSeleccionado, setProductoSeleccionado] = useState<any>(null);
-  const [modificarPrecio, setModificarPrecio] = useState(false);
-  const [precio, setPrecio] = useState<string>('');
-  const [cantidad, setCantidad] = useState<number>(1);
-  const [productosAgregados, setProductosAgregados] = useState<any[]>([]);
-
-
-  const loadOptions = async (inputValue: string) => {
-    if (!inputValue) return [];
-    try {
-      const data: IProductListService = await getProducts(100, inputValue); // tu servicio
-      return data.articulos.map((producto) => ({
-        value: producto.codigo,
-        label: producto.descripcion,
-        data: producto, // aquí guardamos toda la info del producto
-      }));
-    } catch (error) {
-      console.error(error);
-      return [];
-    }
-  };
-
-  // Manejo de selección
-  // Manejo de selección
-  const handleSelectChange = (option: any) => {
-    setSelectedOption(option);
-    setProductoSeleccionado(option?.data || null);
-    setPrecio(option?.data?.precio1 || 0);
-    setCantidad(1);
-  };
-
-  // Manejo checkbox de modificar precio
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setModificarPrecio(e.target.checked);
-    if (!e.target.checked) {
-      // si se desactiva el checkbox, reiniciamos al precio1 por defecto
-      setPrecio(productoSeleccionado?.precio1 || '');
-    }
-  };
-
-
-
-  // Manejo cambio de cantidad
-  const handleTotalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCantidad(Number(e.target.value));
-  };
-
-  const addProduct = async () => {
-    if (!productoSeleccionado) return;
-
-    setLoader(true); // mostrar loader mientras se agrega
-
-    const nuevoProducto = {
-      articulo_id: productoSeleccionado.id,
-      cantidad,
-      precio_unitario: Number(precio),
-    };
-
-    try {
-      // Llamada al servicio
-      const response = await AddArtPedidoService({
-        pedido_id: Number(pedido_id),
-        articulos: [nuevoProducto], // siempre un array
-        comentarios: comentario || '',
-      });
-
-      if (response.success) {
-        enqueueSnackbar("Producto agregado correctamente", { variant: 'success' });
-
-        // actualizar la lista de productos en el frontend
-        setProductosAgregados((prev) => [...prev, {
-          ...nuevoProducto,
-          descripcion: productoSeleccionado.descripcion,
-          total: cantidad * Number(precio),
-        }]);
-
-        // refrescar tabla de pedido
-        loadInfoPedido();
-
-        // cerrar modal
-        setOpenAddProduct(false);
-        setSelectedOption(null);
-        setProductoSeleccionado(null);
-        setPrecio('');
-        setCantidad(1);
-      } else {
-        enqueueSnackbar("No se pudo agregar el producto, intente nuevamente.", { variant: 'error' });
-      }
-
-    } catch (error: any) {
-      console.error(error);
-      enqueueSnackbar(error?.message || "Error al agregar el producto", { variant: 'error' });
-    } finally {
-      setLoader(false);
-    }
-  };
-  // Modal para agregar producto
-  const [openAddProduct, setOpenAddProduct] = useState(false);
-  const [newProductData, setNewProductData] = useState({
-    articulo_id: 0,
-    cantidad: 1,
-    precio_unitario: 0,
-  });
-
-  // Abrir/Cerrar modal
-  const handleOpenAddProduct = () => setOpenAddProduct(true);
-  const handleCloseAddProduct = () => setOpenAddProduct(false);
 
 
   // Modal New Price
@@ -671,25 +548,6 @@ export function ConsultarPedidoPage() {
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, mt: 1 }}>
                 Pedido creado por: {data.Creado_por}
               </Typography>
-
-
-
-              <Button
-                type="button"
-                variant="contained"
-                startIcon={<Icon>add</Icon>}
-                onClick={handleOpenAddProduct}
-                sx={{
-                  bgcolor: "primary.main",
-                  "&:hover": { bgcolor: "primary.dark" },
-                  color: "white",
-                  mb: 2,
-                  mt: 2,
-                }}
-              >
-                Agregar Producto
-              </Button>
-
             </Box>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
@@ -906,128 +764,6 @@ export function ConsultarPedidoPage() {
           </Button>
         </Box>
       )}
-
-      {/* Modal para agregar producto */}
-      <Modal
-        open={openAddProduct}
-        onClose={handleCloseAddProduct}
-        aria-labelledby="modal-add-product-title"
-        aria-describedby="modal-add-product-description"
-      >
-        <Box sx={styleModal}>
-          <motion.div
-            key="formProductoData"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            transition={{ duration: 0.8 }}
-          >
-            <Typography id="modal-add-product-title" variant="h6" sx={{ mb: 2 }}>
-              Buscar producto
-            </Typography>
-
-            <AsyncSelect
-              cacheOptions
-              loadOptions={loadOptions}
-              value={selectedOption}
-              placeholder="Buscar..."
-              onChange={handleSelectChange}
-              isClearable
-              noOptionsMessage={() => "No se encontraron resultados"}
-              loadingMessage={() => "Buscando productos..."}
-              styles={{
-                control: (baseStyles) => ({
-                  ...baseStyles,
-                  borderRadius: '15px',
-                  marginTop: '8px',
-                  padding: '2px 10px',
-                }),
-              }}
-            />
-          </motion.div>
-
-          {productoSeleccionado && (
-            <motion.div
-              key="productoData"
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              transition={{ duration: 0.7 }}
-            >
-              <Box sx={{ display: "grid", gap: 2, mt: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Nombre"
-                  value={productoSeleccionado.descripcion}
-                  InputProps={{ readOnly: true }}
-                />
-                <TextField
-                  fullWidth
-                  label="Stock"
-                  value={productoSeleccionado.existencia}
-                  InputProps={{ readOnly: true }}
-                />
-
-                {/* Selección de precio */}
-                <FormControl>
-                  <FormLabel>Precio</FormLabel>
-
-                  <RadioGroup
-                    row
-                    value={modificarPrecio ? '' : precio} // precio siempre string
-                    onChange={(e) => setPrecio(e.target.value)} // guarda como string
-                  >
-                    {[productoSeleccionado.precio1, productoSeleccionado.precio2].map((p: number, i: number) => (
-                      <FormControlLabel
-                        key={i}
-                        value={p.toString()} // string
-                        control={<Radio icon={<RadioButtonUncheckedIcon />} checkedIcon={<CheckCircleIcon />} />}
-                        label={`$ ${p?.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`}
-                        disabled={modificarPrecio}
-                      />
-                    ))}
-                  </RadioGroup>
-
-                  <FormControlLabel
-                    control={<Checkbox checked={modificarPrecio} onChange={handleCheckboxChange} />}
-                    label="Introducir precio convenido"
-                  />
-                  <TextField
-                    label="Precio Convenido"
-                    type="number"
-                    value={precio}
-                    onChange={(e) => setPrecio(e.target.value)} // string
-                    fullWidth
-                    disabled={!modificarPrecio}
-                    sx={{ mt: 1 }}
-                  />
-                </FormControl>
-
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField
-                    label="Cantidad"
-                    type="number"
-                    value={cantidad}
-                    onChange={handleTotalChange}
-                    fullWidth
-                  />
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={addProduct}
-                    disabled={productosAgregados.some(prod => prod.articulo_id === productoSeleccionado.id)}
-                  >
-                    <Icon>add</Icon> Agregar
-                  </Button>
-                </Box>
-              </Box>
-            </motion.div>
-          )}
-        </Box>
-      </Modal>
-
-
-
     </>
   );
 }
