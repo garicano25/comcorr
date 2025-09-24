@@ -202,7 +202,7 @@ export function CobranzaPage() {
             renderCell: (params) => (
                 <div>
                     <Button
-                        disabled={params.row.estado === 'cobranza_aprobada' || params.row.estado === 'cancelado' || token?.role !== 1}
+                        disabled={params.row.estado === 'cobranza_aprobada' || params.row.estado === 'cancelado' || token?.role !== 6}
                         onClick={(event) => handleClick(event, params.row)}
                         variant="text"
                     >
