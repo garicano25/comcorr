@@ -15,7 +15,6 @@ import {
     IResponseInfoPedido
 } from "../../interfaces/pedidos.interface";
 import {
-    aprovePedidoService,
     aprovePedidoCobranzaService,
     declinePedidoService,
     getInfoPedido,
@@ -147,10 +146,6 @@ export function CobranzaPage() {
         setFiltros(prev => ({ ...prev, vendedor_id: event.target.value }));
     };
 
-    // Maneja cambio de estado
-    const handleEstadoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFiltros(prev => ({ ...prev, estado: event.target.value }));
-    };
 
     // Maneja cambio de fecha
     const handleFechaInicioChange = (event: React.ChangeEvent<HTMLInputElement>) => {

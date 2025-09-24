@@ -159,11 +159,7 @@ export function ConsultarPedidoPage() {
   };
   // Modal para agregar producto
   const [openAddProduct, setOpenAddProduct] = useState(false);
-  const [newProductData, setNewProductData] = useState({
-    articulo_id: 0,
-    cantidad: 1,
-    precio_unitario: 0,
-  });
+
 
   // Abrir/Cerrar modal
   const handleOpenAddProduct = () => setOpenAddProduct(true);
