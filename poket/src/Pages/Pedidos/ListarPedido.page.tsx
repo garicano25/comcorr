@@ -132,6 +132,7 @@ export function ListarPedidoPage() {
     const handleClienteInputChange = (event: any, value: string) => {
         if (value.length >= 2) {
             buscarClientes(value);
+            console.log(event)
         } else {
             setClientesOptions([]);
             setFiltros(prev => ({ ...prev, cliente_id: '' }));

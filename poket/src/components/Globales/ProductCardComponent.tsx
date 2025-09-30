@@ -1,6 +1,6 @@
 import { Box, Stack, Typography, Chip, Divider, Button, Icon, Tooltip, Zoom } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
-import { IProductList, IProductoUpdate } from "../../interfaces/productos.interface";
+import { IProductList } from "../../interfaces/productos.interface";
 import { useNavigate } from "react-router";
 import { updateProduct } from "../../services/productos.services";
 import { enqueueSnackbar } from "notistack";
