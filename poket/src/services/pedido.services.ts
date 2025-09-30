@@ -35,6 +35,21 @@ export const AddArtPedidoService = (data: IPayloadPedidoArt) => {
     }
   });
 };
+// services/pedido.services.ts
+export const deleteArtPedidoService = async (
+  pedido_id: number,
+  articulo_id: number
+): Promise<IResponseCreatePedido> => {
+  try {
+    const response = await clientAdmin.delete("/Deletertpedidos", {
+      data: { pedido_id, articulo_id }, // aquí mandas ambos
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Tabla de pedidos (con filtros)
 export const listPedidos = (page: number, limit: number, filtros: any = {}) => {
   return new Promise<IResponseGetPedidos>(async (resolve, reject) => {
@@ -78,6 +93,7 @@ export const aprovePedidoService = (id: number) => {
 export const aprovePedidoCobranzaService = (id: number) => {
   return new Promise<IResponseEstatusPedido>(async (resolve, reject) => {
     try {
+      console.log("hola");
       const response: AxiosResponse = await clientAdmin.put(`/pedidos/${id}`, {
         estado: "cobranza_aprobada",
       });

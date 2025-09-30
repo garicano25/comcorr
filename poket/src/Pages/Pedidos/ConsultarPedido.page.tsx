@@ -38,13 +38,13 @@ import { styleModal } from "../../utils/styles.aditional";
 import AsyncSelect from "react-select/async";
 import { getProducts } from "../../services/productos.services";
 import { IProductListService } from "../../interfaces/productos.interface";
-import { AddArtPedidoService } from "../../services/pedido.services"; // importa tu servicio
+import { AddArtPedidoService, deleteArtPedidoService } from "../../services/pedido.services"; // importa tu servicio
 
 
 
 export function ConsultarPedidoPage() {
   const params = useParams();
-  const [pedido_id] = useState(params.id)
+  const [pedido_id] = useState(params.id);
   const [articuloId, setArticuloId] = useState<number>(0)
   const [loader, setLoader] = useState<boolean>(true);
   const [loaderPrice, setLoaderPrice] = useState<boolean>(false);
@@ -67,6 +67,7 @@ export function ConsultarPedidoPage() {
   const [cantidad, setCantidad] = useState<number>(1);
   const [productosAgregados, setProductosAgregados] = useState<any[]>([]);
 
+  const [estadoPedido, setEstadoPedido] = useState<string>('');
 
   const loadOptions = async (inputValue: string) => {
     if (!inputValue) return [];
@@ -258,13 +259,52 @@ export function ConsultarPedidoPage() {
     const theme = useTheme();
     return useMediaQuery(theme.breakpoints.down('sm'));
   };
+  const handleDeleteArticulo = async (articuloId: number) => {
+    const confirm = window.confirm("¿Seguro que deseas eliminar este artículo?");
+    if (!confirm) return;
 
+    try {
+      const response = await deleteArtPedidoService(Number(pedido_id), articuloId); // enviamos ambos
+      if (response.success) {
+        enqueueSnackbar("Artículo eliminado correctamente", { variant: "success" });
+        loadInfoPedido(); // refresca la tabla
+      } else {
+        enqueueSnackbar("No se pudo eliminar el artículo", { variant: "error" });
+      }
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar("Error al eliminar el artículo", { variant: "error" });
+    }
+  };
+  console.log(estadoPedido)
   // ================ Tabla de productos ==================
   const paginationModel = { page: 0, pageSize: 100 };
   const isMobile = useIsMobile();
 
   const columns: GridColDef[] = [
+    {
+      headerName: 'Eliminar',
+      field: 'eliminar',
+      width: 100,
+      align: 'center',
+      headerAlign: 'center',
+      headerClassName: '--header-table',
+      renderCell: (params) => {
+        // Si el pedido NO está en proceso, no renderiza nada
+        if (estadoPedido !== "en proceso") return null;
 
+        return (
+          <Tooltip title="Eliminar artículo" placement="top" slots={{ transition: Zoom }}>
+            <IconButton
+              color="error"
+              onClick={() => handleDeleteArticulo(params.row.articulo_id)}
+            >
+              <Icon>delete</Icon>
+            </IconButton>
+          </Tooltip>
+        );
+      },
+    },
     {
       headerName: 'Art. ID',
       field: 'articulo_id',
@@ -509,6 +549,7 @@ export function ConsultarPedidoPage() {
         setRows(response.articulos)
         setComentario(response.pedido.comentarios || "")
 
+        setEstadoPedido(response.pedido.estado);
 
         const cliente: IListPedidos = response.pedido
 

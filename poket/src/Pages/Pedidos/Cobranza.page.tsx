@@ -326,7 +326,7 @@ export function CobranzaPage() {
             return;
         }
 
-        if (token?.role === 1) {
+        if (token?.role === 6) {
             setAlert({
                 title: '¿Está seguro de aprobar este pedido?',
                 text: 'Es necesario confirmar para continuar.',
@@ -346,7 +346,7 @@ export function CobranzaPage() {
     };
 
     const showAlertDecline = (id: number) => {
-        if (token?.role === 1) {
+        if (token?.role === 6) {
             setAlert({
                 title: '¿Está seguro de cancelar este pedido?',
                 text: 'Es necesario confirmar para continuar.',

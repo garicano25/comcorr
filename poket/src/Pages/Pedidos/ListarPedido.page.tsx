@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { esES } from '@mui/x-data-grid/locales';
-
 import { useNavigate } from "react-router";
 import { useParamsRoute } from "../../context/ParamsRouteContext";
 import {
@@ -20,10 +19,7 @@ import {
     getInfoPedido,
     listPedidos
 } from "../../services/pedido.services";
-import {
-    getClientesAll,
-    getVendedores
-} from "../../services/clientes.services";
+import { getClientesAll, getVendedores } from "../../services/clientes.services";
 import { useAlert } from "../../context/AlertProviderContext";
 import { decodeToken } from "../../utils/options.token";
 import { IUser } from "../../interfaces/user.interface";
@@ -51,14 +47,20 @@ export function ListarPedidoPage() {
     const open = Boolean(anchorEl);
     const token: IUser | null = decodeToken();
 
-    // Filtros
-    const [filtros, setFiltros] = useState({
-        estado: '',
-        cliente_id: '',
-        vendedor_id: '',
-        fecha: '',
-        fechafin: ''
-    });
+    // Filtros iniciales desde localStorage
+    const filtrosGuardados = JSON.parse(localStorage.getItem('filtrosPedidos') || '{}');
+    const filtrosIniciales = {
+        estado: filtrosGuardados.estado || '',
+        cliente_id: filtrosGuardados.cliente_id || '',
+        vendedor_id: filtrosGuardados.vendedor_id || '',
+        fecha: filtrosGuardados.fecha || '',
+        fechafin: filtrosGuardados.fechafin || ''
+    };
+
+    // Filtros temporales (inputs)
+    const [filtros, setFiltros] = useState(filtrosIniciales);
+    // Filtros aplicados para la búsqueda
+    const [filtrosAplicados, setFiltrosAplicados] = useState(filtrosIniciales);
 
     const useIsMobile = () => {
         const theme = useTheme();
@@ -105,7 +107,6 @@ export function ListarPedidoPage() {
         fetchVendedores();
     }, []);
 
-
     // Función para buscar clientes en autocomplete
     const buscarClientes = async (search: string) => {
         setLoadingClientes(true);
@@ -114,7 +115,7 @@ export function ListarPedidoPage() {
             setClientesOptions(
                 (res.clientes || []).map(cliente => ({
                     id: cliente.id,
-                    nombre: cliente.razon_social // Ajusta esto al nombre correcto
+                    nombre: cliente.razon_social
                 }))
             );
         } catch (error) {
@@ -124,15 +125,11 @@ export function ListarPedidoPage() {
         }
     };
 
-
-    // Maneja el cambio de filtro de cliente en autocomplete
     const handleClienteChange = (value: any) => {
         setFiltros(prev => ({ ...prev, cliente_id: value ? String(value.id) : '' }));
     };
 
-    // Maneja el input change para disparar búsqueda clientes
     const handleClienteInputChange = (event: any, value: string) => {
-        console.log(event)
         if (value.length >= 2) {
             buscarClientes(value);
         } else {
@@ -141,17 +138,14 @@ export function ListarPedidoPage() {
         }
     };
 
-    // Maneja cambio de vendedor
     const handleVendedorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, vendedor_id: event.target.value }));
     };
 
-    // Maneja cambio de estado
     const handleEstadoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, estado: event.target.value }));
     };
 
-    // Maneja cambio de fecha
     const handleFechaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, fecha: event.target.value }));
     };
@@ -253,13 +247,13 @@ export function ListarPedidoPage() {
         },
     ];
 
-    const getPedidos = async () => {
+    const getPedidos = async (pagination: GridPaginationModel, filtrosBusq: typeof filtros) => {
         setPending(true);
         try {
             const data = await listPedidos(
-                paginationModel.page + 1,
-                paginationModel.pageSize,
-                filtros
+                pagination.page + 1,
+                pagination.pageSize,
+                filtrosBusq
             );
             setRows(data.pedidos);
             setRowCount(data.totalRecords);
@@ -276,7 +270,7 @@ export function ListarPedidoPage() {
             const data: IResponseEstatusPedido = await aprovePedidoService(id);
             if (data.success) {
                 setAlert({ title: data.mensaje, text: 'Pedido Aprobado', open: true, icon: 'success' });
-                getPedidos();
+                getPedidos(paginationModel, filtrosAplicados);
             } else {
                 setAlert({ title: data.mensaje, text: 'Valide la información o intente nuevamente', open: true, icon: 'warning' });
             }
@@ -291,7 +285,7 @@ export function ListarPedidoPage() {
             const data: IResponseEstatusPedido = await declinePedidoService(id);
             if (data.success) {
                 setAlert({ title: data.mensaje, text: 'Pedido Cancelado', open: true, icon: 'success' });
-                getPedidos();
+                getPedidos(paginationModel, filtrosAplicados);
             } else {
                 setAlert({ title: data.mensaje, text: 'Valide la información o intente nuevamente', open: true, icon: 'warning' });
             }
@@ -369,7 +363,7 @@ export function ListarPedidoPage() {
     };
 
     useEffect(() => {
-        getPedidos();
+        getPedidos(paginationModel, filtrosAplicados);
         setColumnVisibilityModel({
             id: true,
             cliente_nombre: true,
@@ -378,7 +372,7 @@ export function ListarPedidoPage() {
             estado: true,
             acciones: true,
         });
-    }, [isMobile, paginationModel, filtros]);
+    }, [isMobile, paginationModel, filtrosAplicados]);
 
     return (
         <Box sx={{
@@ -390,11 +384,8 @@ export function ListarPedidoPage() {
                 fontWeight: 900
             },
         }}>
-            {/* Filtros */}
-            {/* Filtros (solo para rol 1) */}
             {token?.role === 1 && (
                 <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                    {/* Cliente Autocomplete */}
                     <Autocomplete
                         sx={{ minWidth: 250 }}
                         size="small"
@@ -419,9 +410,9 @@ export function ListarPedidoPage() {
                                 }}
                             />
                         )}
+                        value={clientesOptions.find(c => c.id === Number(filtros.cliente_id)) || null}
                     />
 
-                    {/* Vendedor Dropdown */}
                     <TextField
                         select
                         label="Vendedor"
@@ -438,7 +429,6 @@ export function ListarPedidoPage() {
                         ))}
                     </TextField>
 
-                    {/* Estado Dropdown */}
                     <TextField
                         select
                         label="Estado"
@@ -454,16 +444,13 @@ export function ListarPedidoPage() {
                         <MenuItem value="cancelado">Cancelado</MenuItem>
                     </TextField>
 
-                    {/* Fecha Input */}
                     <TextField
                         label="Fecha Inicio"
                         size="small"
                         type="date"
                         value={filtros.fecha}
                         onChange={handleFechaChange}
-                        InputLabelProps={{
-                            shrink: true,
-                        }}
+                        InputLabelProps={{ shrink: true }}
                         sx={{ minWidth: 150 }}
                     />
                     <TextField
@@ -472,23 +459,34 @@ export function ListarPedidoPage() {
                         type="date"
                         value={filtros.fechafin}
                         onChange={handleFechaFinChange}
-                        InputLabelProps={{
-                            shrink: true,
-                        }}
+                        InputLabelProps={{ shrink: true }}
                         sx={{ minWidth: 150 }}
                     />
 
                     <Button
+                        variant="contained"
+                        onClick={() => {
+                            setFiltrosAplicados(filtros);
+                            localStorage.setItem('filtrosPedidos', JSON.stringify(filtros));
+                        }}
+                    >
+                        Buscar
+                    </Button>
+
+                    <Button
                         variant="outlined"
-                        onClick={() => setFiltros({ estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '' })}
+                        onClick={() => {
+                            const filtrosLimpios = { estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '' };
+                            setFiltros(filtrosLimpios);
+                            setFiltrosAplicados(filtrosLimpios);
+                            localStorage.removeItem('filtrosPedidos');
+                        }}
                     >
                         Limpiar filtros
                     </Button>
                 </Box>
             )}
 
-
-            {/* DataGrid */}
             <DataGrid
                 sx={{
                     borderRadius: 2,

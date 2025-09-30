@@ -15,11 +15,11 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
   const [precio2, setPrecio2] = useState(producto.precio2);
 
   const enStock = Number(producto.existencia) > 0;
- 
-  
-  
-  
- // Función para agregar solo un producto al carrito (no permite duplicados ni cantidades mayores a 1)
+
+
+
+
+  // Función para agregar solo un producto al carrito (no permite duplicados ni cantidades mayores a 1)
   const handleAddToCart = () => {
     try {
       const cart = { product_code: producto.codigo };
@@ -36,34 +36,33 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
 
   // Funcion para actualizar la informacion del producto
   const handleUpdateProduct = async () => {
-
     setLoader(true);
 
     try {
+      const response: any = await updateProduct(producto.clave)
 
-      const response : IProductoUpdate = await updateProduct(producto.clave)
-      if(response.success){
-        enqueueSnackbar("Información del producto actualizado.", { variant: 'success'});
-        
+      if (response.success && response.job1?.success) {
+        enqueueSnackbar("Información del producto actualizado.", { variant: 'success' });
+
+        const articulo = response.job1.articulo;
+
+        // Actualizamos la info del producto en la tarjeta
+        setStock(Number(articulo.existencia) > 0 ? `${articulo.existencia} en stock` : "Agotado");
+        setPrecio1(articulo.precio1);
+        setPrecio2(articulo.precio2);
       }
-
-      // Actualizamos la info del producto en la tarjeta
-      setStock(Number(response.articulo.existencia) > 0 ? `${response.articulo.existencia} en stock` : "Agotado");
-      setPrecio1(response.articulo.precio1);
-      setPrecio2(response.articulo.precio2);
 
     } catch (error) {
       console.error("Error al agregar al carrito:", error);
-      enqueueSnackbar("Ocurrio un error al actualizar la información del producto.", { variant: 'error'});
-
+      enqueueSnackbar("Ocurrio un error al actualizar la información del producto.", { variant: 'error' });
     } finally {
       setLoader(false);
     }
-
   };
 
 
-  
+
+
 
   return (
     <Box
@@ -83,7 +82,7 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
         },
         boxSizing: "border-box",
         display: "flex",
-        flexDirection: "column", 
+        flexDirection: "column",
       }}
     >
       <Stack spacing={1} sx={{ flexGrow: 1 }}>
@@ -155,8 +154,8 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
 
       {/* 🔹 Botón siempre abajo */}
       <Stack direction="row" spacing={0.5} mt={3}>
-        
-        <Tooltip title="Cotizar producto" slots={{ transition: Zoom }} placement="top">   
+
+        <Tooltip title="Cotizar producto" slots={{ transition: Zoom }} placement="top">
           <Button
             startIcon={<AddShoppingCartIcon />}
             onClick={handleAddToCart}
@@ -175,8 +174,8 @@ export const ProductCard = ({ producto }: { producto: IProductList }) => {
             Cotizar producto
           </Button>
         </Tooltip>
-        
-        <Tooltip title="Actualizar producto" slots={{ transition: Zoom }} placement="top">   
+
+        <Tooltip title="Actualizar producto" slots={{ transition: Zoom }} placement="top">
           <Button
             onClick={handleUpdateProduct}
             disabled={loader}
