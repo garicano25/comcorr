@@ -10,6 +10,7 @@ import InfoSvg from "../../assets/icons/SlideBar/info.svg";
 import DocsSvg from "../../assets/icons/SlideBar/Doc.svg";
 import ClientesSvg from "../../assets/icons/SlideBar/User.svg";
 import BaseSelected from "../../assets/icons/SlideBar/Base.svg";
+import Conciliador from "../../assets/icons/SlideBar/Conciliador.svg";
 import CreateFolioSvg from "../../assets/icons/SlideBar/CreateFolio.svg";
 import BaseSvg from "../../assets/icons/SlideBar/Base.svg";
 
@@ -176,6 +177,23 @@ const DrawerComponent: React.FC = () => {
                                             }} />
                                     </ListItemIcon>
                                     <ListItemText secondary="Cobranzas" />
+                                </ListItemButton>
+                            )}
+                            {(userRol === 1 || userRol === 7) && (
+                                <ListItemButton
+                                    sx={{ pl: 4 }}
+                                    onClick={() => navigate('/facturacion')}
+                                    selected={route === '/racturacion'}
+                                >
+                                    <ListItemIcon>
+                                        <img src={Conciliador} alt="Icon facturacion"
+                                            style={{
+                                                maxWidth: '100%',
+                                                height: 'auto',
+                                                filter: route === '/facturacion' ? 'invert(1)' : 'none'
+                                            }} />
+                                    </ListItemIcon>
+                                    <ListItemText secondary="facturacion" />
                                 </ListItemButton>
                             )}
                         </List>

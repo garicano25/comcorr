@@ -103,7 +103,19 @@ export const aprovePedidoCobranzaService = (id: number) => {
     }
   });
 };
-
+export const aprovePedidoFacturacionService = (id: number) => {
+  return new Promise<IResponseEstatusPedido>(async (resolve, reject) => {
+    try {
+      console.log("hola");
+      const response: AxiosResponse = await clientAdmin.put(`/pedidos/${id}`, {
+        estado: "surtido",
+      });
+      resolve(response.data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 // Decline de pedido
 export const declinePedidoService = (id: number) => {
   return new Promise<IResponseEstatusPedido>(async (resolve, reject) => {

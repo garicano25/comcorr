@@ -56,7 +56,9 @@ export interface IListPedidos {
   cliente_nombre: string;
   cliente_clave: string;
   comentarios?: string;
+  rfc?: string;
   cliente_telefono?: string;
+  zona?: string;
 }
 
 export interface IResponseGetPedidos {

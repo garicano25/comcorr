@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { esES } from '@mui/x-data-grid/locales';
+
 import { useNavigate } from "react-router";
 import { useParamsRoute } from "../../context/ParamsRouteContext";
 import {
@@ -14,20 +15,22 @@ import {
     IResponseInfoPedido
 } from "../../interfaces/pedidos.interface";
 import {
-    aprovePedidoService,
+    aprovePedidoFacturacionService,
     declinePedidoService,
     getInfoPedido,
     listPedidos
 } from "../../services/pedido.services";
-import { getClientesAll, getVendedores } from "../../services/clientes.services";
+import {
+    getClientesAll,
+    getVendedores
+} from "../../services/clientes.services";
 import { useAlert } from "../../context/AlertProviderContext";
 import { decodeToken } from "../../utils/options.token";
 import { IUser } from "../../interfaces/user.interface";
 import { useSnackbar } from "notistack";
 import { formatDate } from "../../utils/function.global";
-import { getZonas } from "../../services/productos.services";
 
-export function ListarPedidoPage() {
+export function FacturacionPage() {
     const [pending, setPending] = useState(true);
     const { setAlert } = useAlert();
     const [rows, setRows] = useState<IListPedidos[]>([]);
@@ -35,31 +38,6 @@ export function ListarPedidoPage() {
     const navigate = useNavigate();
     const { setParams } = useParamsRoute();
     const { enqueueSnackbar } = useSnackbar();
-    const [zonasOptions, setZonasOptions] = useState<{ id: string; nombre: string }[]>([]);
-    // id de la zona seleccionada
-    useEffect(() => {
-        const fetchZonas = async () => {
-            try {
-                const response = await getZonas(); // tu servicio
-                // asumiendo que la respuesta tiene { success: true, zonas: [...] }
-                if (response.success && Array.isArray(response.zonas)) {
-                    setZonasOptions(response.zonas.map((z: any) => ({
-                        id: String(z.id),
-                        nombre: z.nombre
-                    })));
-                    /*if (response.zonas.length > 0) {
-                        setFiltros(prev => ({ ...prev, zona: String(response.zonas[0].id) }));
-                    }*/
-                }
-            } catch (error) {
-                console.error("Error al cargar zonas:", error);
-            }
-        };
-
-
-        fetchZonas();
-    }, []);
-
 
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
         page: 0,
@@ -73,21 +51,14 @@ export function ListarPedidoPage() {
     const open = Boolean(anchorEl);
     const token: IUser | null = decodeToken();
 
-    // Filtros iniciales desde localStorage
-    const filtrosGuardados = JSON.parse(localStorage.getItem('filtrosPedidos') || '{}');
-    const filtrosIniciales = {
-        estado: filtrosGuardados.estado || '',
-        cliente_id: filtrosGuardados.cliente_id || '',
-        vendedor_id: filtrosGuardados.vendedor_id || '',
-        fecha: filtrosGuardados.fecha || '',
-        fechafin: filtrosGuardados.fechafin || '',
-        zona: filtrosGuardados.zona || ''
-    };
-
-    // Filtros temporales (inputs)
-    const [filtros, setFiltros] = useState(filtrosIniciales);
-    // Filtros aplicados para la búsqueda
-    const [filtrosAplicados, setFiltrosAplicados] = useState(filtrosIniciales);
+    // Filtros
+    const [filtros, setFiltros] = useState({
+        estado: '',
+        cliente_id: '',
+        vendedor_id: '',
+        fecha: '',
+        fechafin: ''
+    });
 
     const useIsMobile = () => {
         const theme = useTheme();
@@ -102,7 +73,7 @@ export function ListarPedidoPage() {
 
     const verDetallesPedido = (id: string) => {
         setParams(id);
-        navigate(`/consultar-pedido/${id}`);
+        navigate(`/facturacion/${id}`);
     };
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>, row: any) => {
@@ -134,6 +105,7 @@ export function ListarPedidoPage() {
         fetchVendedores();
     }, []);
 
+
     // Función para buscar clientes en autocomplete
     const buscarClientes = async (search: string) => {
         setLoadingClientes(true);
@@ -142,7 +114,7 @@ export function ListarPedidoPage() {
             setClientesOptions(
                 (res.clientes || []).map(cliente => ({
                     id: cliente.id,
-                    nombre: cliente.razon_social
+                    nombre: cliente.razon_social // Ajusta esto al nombre correcto
                 }))
             );
         } catch (error) {
@@ -152,31 +124,34 @@ export function ListarPedidoPage() {
         }
     };
 
+
+    // Maneja el cambio de filtro de cliente en autocomplete
     const handleClienteChange = (value: any) => {
         setFiltros(prev => ({ ...prev, cliente_id: value ? String(value.id) : '' }));
     };
 
+    // Maneja el input change para disparar búsqueda clientes
     const handleClienteInputChange = (event: any, value: string) => {
+        console.log(event)
         if (value.length >= 2) {
             buscarClientes(value);
-            console.log(event)
         } else {
             setClientesOptions([]);
             setFiltros(prev => ({ ...prev, cliente_id: '' }));
         }
     };
 
+    // Maneja cambio de vendedor
     const handleVendedorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, vendedor_id: event.target.value }));
     };
 
-    const handleEstadoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFiltros(prev => ({ ...prev, estado: event.target.value }));
-    };
 
-    const handleFechaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Maneja cambio de fecha
+    const handleFechaInicioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, fecha: event.target.value }));
     };
+
     const handleFechaFinChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, fechafin: event.target.value }));
     };
@@ -193,14 +168,6 @@ export function ListarPedidoPage() {
             renderCell: (params) => formatDate(params.value)
         },
         { headerName: 'Creado por', field: 'Creado_por', type: 'string', width: 150, headerClassName: '--header-table' },
-        {
-            headerName: 'Zona Entra',
-            field: 'zona',
-            type: 'string',
-            width: 150,
-            headerClassName: '--header-table'
-        }
-        ,
         {
             headerName: 'Estatus',
             field: 'estado',
@@ -236,11 +203,11 @@ export function ListarPedidoPage() {
             renderCell: (params) => (
                 <div>
                     <Button
-                        disabled={params.row.estado === 'aceptado' || params.row.estado === 'cancelado' || token?.role !== 1}
+                        disabled={params.row.estado === 'surtido' || token?.role !== 7}
                         onClick={(event) => handleClick(event, params.row)}
                         variant="text"
                     >
-                        {params.row.estado === 'aceptado' ? <Icon>check_circle</Icon> :
+                        {params.row.estado === 'surtido' ? <Icon>check_circle</Icon> :
                             params.row.estado === 'cancelado' ? <Icon>cancel</Icon> :
                                 <Icon>menu</Icon>}
                     </Button>
@@ -252,7 +219,7 @@ export function ListarPedidoPage() {
                         <MenuItem onClick={() => {
                             if (selectedRow) showAlert(selectedRow.id);
                             handleClose();
-                        }}>Aprobar</MenuItem>
+                        }}>Surtir</MenuItem>
                         <MenuItem onClick={() => {
                             if (selectedRow) showAlertDecline(selectedRow.id);
                             handleClose();
@@ -284,13 +251,13 @@ export function ListarPedidoPage() {
         },
     ];
 
-    const getPedidos = async (pagination: GridPaginationModel, filtrosBusq: typeof filtros) => {
+    const getPedidos = async () => {
         setPending(true);
         try {
             const data = await listPedidos(
-                pagination.page + 1,
-                pagination.pageSize,
-                filtrosBusq
+                paginationModel.page + 1,
+                paginationModel.pageSize,
+                filtros
             );
             setRows(data.pedidos);
             setRowCount(data.totalRecords);
@@ -304,10 +271,10 @@ export function ListarPedidoPage() {
 
     const aprovePedido = async (id: number) => {
         try {
-            const data: IResponseEstatusPedido = await aprovePedidoService(id);
+            const data: IResponseEstatusPedido = await aprovePedidoFacturacionService(id);
             if (data.success) {
                 setAlert({ title: data.mensaje, text: 'Pedido Aprobado', open: true, icon: 'success' });
-                getPedidos(paginationModel, filtrosAplicados);
+                getPedidos();
             } else {
                 setAlert({ title: data.mensaje, text: 'Valide la información o intente nuevamente', open: true, icon: 'warning' });
             }
@@ -322,7 +289,7 @@ export function ListarPedidoPage() {
             const data: IResponseEstatusPedido = await declinePedidoService(id);
             if (data.success) {
                 setAlert({ title: data.mensaje, text: 'Pedido Cancelado', open: true, icon: 'success' });
-                getPedidos(paginationModel, filtrosAplicados);
+                getPedidos();
             } else {
                 setAlert({ title: data.mensaje, text: 'Valide la información o intente nuevamente', open: true, icon: 'warning' });
             }
@@ -360,7 +327,7 @@ export function ListarPedidoPage() {
             return;
         }
 
-        if (token?.role === 1) {
+        if (token?.role === 7) {
             setAlert({
                 title: '¿Está seguro de aprobar este pedido?',
                 text: 'Es necesario confirmar para continuar.',
@@ -380,7 +347,7 @@ export function ListarPedidoPage() {
     };
 
     const showAlertDecline = (id: number) => {
-        if (token?.role === 1) {
+        if (token?.role === 7) {
             setAlert({
                 title: '¿Está seguro de cancelar este pedido?',
                 text: 'Es necesario confirmar para continuar.',
@@ -400,7 +367,7 @@ export function ListarPedidoPage() {
     };
 
     useEffect(() => {
-        getPedidos(paginationModel, filtrosAplicados);
+        getPedidos();
         setColumnVisibilityModel({
             id: true,
             cliente_nombre: true,
@@ -409,7 +376,7 @@ export function ListarPedidoPage() {
             estado: true,
             acciones: true,
         });
-    }, [isMobile, paginationModel, filtrosAplicados]);
+    }, [isMobile, paginationModel, filtros]);
 
     return (
         <Box sx={{
@@ -421,8 +388,11 @@ export function ListarPedidoPage() {
                 fontWeight: 900
             },
         }}>
-            {token?.role === 1 && (
+            {/* Filtros */}
+            {/* Filtros (solo para rol 1) */}
+            {(token?.role === 1 || token?.role === 7) && (
                 <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                    {/* Cliente Autocomplete */}
                     <Autocomplete
                         sx={{ minWidth: 250 }}
                         size="small"
@@ -447,9 +417,9 @@ export function ListarPedidoPage() {
                                 }}
                             />
                         )}
-                        value={clientesOptions.find(c => c.id === Number(filtros.cliente_id)) || null}
                     />
 
+                    {/* Vendedor Dropdown */}
                     <TextField
                         select
                         label="Vendedor"
@@ -466,80 +436,43 @@ export function ListarPedidoPage() {
                         ))}
                     </TextField>
 
-                    <TextField
-                        select
-                        label="Estado"
-                        size="small"
-                        value={filtros.estado}
-                        onChange={handleEstadoChange}
-                        sx={{ minWidth: 150 }}
-                    >
-                        <MenuItem value="">Todos</MenuItem>
-                        <MenuItem value="surtido">Surtido</MenuItem>
-                        <MenuItem value="cobranza_aprobada">Aceptado por cobranza</MenuItem>
-                        <MenuItem value="aceptado">Aceptado</MenuItem>
-                        <MenuItem value="en proceso">En proceso</MenuItem>
-                        <MenuItem value="cancelado">Cancelado</MenuItem>
-                    </TextField>
-                    <TextField
-                        select
-                        label="Zonas"
-                        size="small"
-                        value={filtros.zona}
-                        onChange={(e) => setFiltros(prev => ({ ...prev, zona: e.target.value }))}
-                        sx={{ minWidth: 150 }}
-                    >
-                        <MenuItem value="">Todas</MenuItem>
-                        {zonasOptions.map((z) => (
-                            <MenuItem key={z.id} value={z.id}>
-                                {z.nombre}
-                            </MenuItem>
-                        ))}
-                    </TextField>
 
+
+                    {/* Fecha Input */}
                     <TextField
-                        label="Fecha Inicio"
+                        label="Fecha"
                         size="small"
                         type="date"
                         value={filtros.fecha}
-                        onChange={handleFechaChange}
-                        InputLabelProps={{ shrink: true }}
+                        onChange={handleFechaInicioChange}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
                         sx={{ minWidth: 150 }}
                     />
+                    {/* Fecha Input */}
                     <TextField
-                        label="Fecha Fin"
+                        label="Fechafin"
                         size="small"
                         type="date"
                         value={filtros.fechafin}
                         onChange={handleFechaFinChange}
-                        InputLabelProps={{ shrink: true }}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
                         sx={{ minWidth: 150 }}
                     />
-
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            setFiltrosAplicados(filtros);
-                            localStorage.setItem('filtrosPedidos', JSON.stringify(filtros));
-                        }}
-                    >
-                        Buscar
-                    </Button>
-
                     <Button
                         variant="outlined"
-                        onClick={() => {
-                            const filtrosLimpios = { estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '', zona: '' };
-                            setFiltros(filtrosLimpios);
-                            setFiltrosAplicados(filtrosLimpios);
-                            localStorage.removeItem('filtrosPedidos');
-                        }}
+                        onClick={() => setFiltros({ estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '' })}
                     >
                         Limpiar filtros
                     </Button>
                 </Box>
             )}
 
+
+            {/* DataGrid */}
             <DataGrid
                 sx={{
                     borderRadius: 2,

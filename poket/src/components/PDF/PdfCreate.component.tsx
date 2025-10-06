@@ -37,13 +37,13 @@ export default function DescargarPDF({ dataPedido }: Props) {
       // --------------------------
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(31,73,125);
+      doc.setTextColor(31, 73, 125);
       doc.text("COMERCIAL CORREA", pageWidth / 2, 18, { align: "center" });
 
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(31,73,125);
-      doc.text( "MAYORISTAS EN LÍNEA BLANCA, ELECTRÓNICA Y AIRE ACONDICIONADO", pageWidth / 2, 26, { align: "center" });
+      doc.setTextColor(31, 73, 125);
+      doc.text("MAYORISTAS EN LÍNEA BLANCA, ELECTRÓNICA Y AIRE ACONDICIONADO", pageWidth / 2, 26, { align: "center" });
 
       // --------------------------
       // Fila 1: Logo (izq) + Pedido (der)
@@ -93,10 +93,12 @@ export default function DescargarPDF({ dataPedido }: Props) {
         head: [["Datos Cliente"]],
         styles: { fontSize: 8 },
         headStyles: { fillColor: [83, 141, 213], textColor: 255, fontStyle: "bold", halign: "center" },
-        columnStyles: {0: { halign: 'center' },},
+        columnStyles: { 0: { halign: 'center' }, },
         body: [
+          [(pedido.cliente_id || "N/A")],
           [(pedido.cliente_nombre || "N/A")],
-          [ (pedido.direccion || "N/A")],
+          [(pedido.direccion || "N/A")],
+          [(pedido.rfc || "N/A")],
         ],
       });
       const clienteEndY = (doc as any).lastAutoTable.finalY;
@@ -121,16 +123,18 @@ export default function DescargarPDF({ dataPedido }: Props) {
       // TABLA DE ARTÍCULOS
       // --------------------------
 
+
       autoTable(doc, {
         startY: startYArticulos,
-        head: [["CANTIDAD","CODIGO","DESCRIPCIÓN", "P. UNITARIO","DESCUENTO", "TOTAL"]],
+        head: [["CANTIDAD", "CODIGO", "DESCRIPCIÓN", "P. UNITARIO", "DESCUENTO", "TOTAL"]],
         body: articulos.map((art) => [
           art.cantidad,
           art.codigo,
           art.descripcion,
-          `$ ${Number(art.precio_unitario).toFixed(2)}`,
-          art.descuento,
-          `$ ${Number(art.total).toFixed(2)}`,
+          `$ ${new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(art.precio_unitario))}`,
+          Number(String(art.descuento).replace("%", "")) > 0 ? "X" : art.descuento,
+          `$ ${new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(art.total))}`,
+
         ]),
         columnStyles: {
           0: { halign: 'center' },
@@ -158,8 +162,8 @@ export default function DescargarPDF({ dataPedido }: Props) {
         head: [["NOTAS/INSTRUCCIONES"]],
         headStyles: { fillColor: [22, 54, 92], textColor: 255, fontStyle: "bold", halign: "center" },
         styles: { fontSize: 8, cellPadding: 2, lineWidth: 0.1, lineColor: [180, 180, 180] },
-        columnStyles: {0: { cellPadding:5 },},
-        body: [[(pedido.comentarios || "")],], 
+        columnStyles: { 0: { cellPadding: 5 }, },
+        body: [[(pedido.comentarios || "")],],
       });
       const notasEndY = (doc as any).lastAutoTable.finalY;
 
@@ -173,7 +177,13 @@ export default function DescargarPDF({ dataPedido }: Props) {
         body: [
           [
             { content: "Total", styles: { fontStyle: "bold", halign: "left" } },
-            { content: `$ ${totalGeneral.toFixed(2)}`, styles: { fontStyle: "bold", halign: "right" } },
+            {
+              content: `$ ${new Intl.NumberFormat("es-MX", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(totalGeneral)}`,
+              styles: { fontStyle: "bold", halign: "right" }
+            },
           ],
         ],
       });
@@ -186,7 +196,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
       // --------------------------
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
-      doc.text( "ACEPTADO EL PEDIDO NO SE ACEPTAN DEVOLUCIONES.", pageWidth / 2, afterNotasTotalY,{ align: "center" });
+      doc.text("ACEPTADO EL PEDIDO NO SE ACEPTAN DEVOLUCIONES.", pageWidth / 2, afterNotasTotalY, { align: "center" });
 
       // --------------------------
       // Firma / Agente de venta
@@ -200,7 +210,7 @@ export default function DescargarPDF({ dataPedido }: Props) {
         body: [
           [
             { content: "NOMBRE AGENTE DE VENTA", styles: { fontStyle: "bold", halign: "left" } },
-            { content: pedido.Creado_por, styles: { halign: "center", fillColor: [220, 230, 241] } }, 
+            { content: pedido.Creado_por, styles: { halign: "center", fillColor: [220, 230, 241] } },
           ],
         ],
       });
@@ -255,11 +265,11 @@ export default function DescargarPDF({ dataPedido }: Props) {
         ],
       });
 
-       // --- PIE DE PÁGINA ---
+      // --- PIE DE PÁGINA ---
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.text( "Pomposo Díaz del Castillo 26, Nuevo Progreso, 86700 Macuspana, Tab.", pageWidth / 2, doc.internal.pageSize.getHeight() - 15,{ align: "center", });
-      doc.text("TEL: 936 123 2716",pageWidth / 2,doc.internal.pageSize.getHeight() - 10,{ align: "center" });
+      doc.text("Pomposo Díaz del Castillo 26, Nuevo Progreso, 86700 Macuspana, Tab.", pageWidth / 2, doc.internal.pageSize.getHeight() - 15, { align: "center", });
+      doc.text("TEL: 936 123 2716", pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
 
       // Descargar
       doc.save(`Pedido - #${pedido.id}.pdf`);

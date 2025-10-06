@@ -18,6 +18,10 @@ import {
     FormControl,
     Modal,
     IconButton,
+    InputLabel,
+    Select,
+    MenuItem,
+    SelectChangeEvent,
 } from "@mui/material";
 import Radio from '@mui/material/Radio';
 import Grid from '@mui/material/Grid2';
@@ -31,7 +35,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AsyncSelect from "react-select/async";
 import { IProductList, IProductListService } from "../../interfaces/productos.interface";
-import { getProducts } from "../../services/productos.services";
+import { getProducts, getZonas } from "../../services/productos.services";
 import { ICliente, IDataAddress, IDataClientes, IResponseCreateAddress } from "../../interfaces/catalogos.interface";
 import { createAddressClient, getAddressClient, getClientes } from "../../services/clientes.services";
 import { LoaderComponent } from "../../components/Globales/Loader.component";
@@ -39,6 +43,12 @@ import { style, styleModal } from "../../utils/styles.aditional";
 import { useSnackbar } from "notistack";
 import { createPedidoService } from "../../services/pedido.services";
 
+// Tipos
+interface Zona {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+}
 export function CrearPedidoPage() {
 
     const navigate = useNavigate();
@@ -50,7 +60,29 @@ export function CrearPedidoPage() {
     const [pedido, setPedido] = useState<number | null>(null)
     const [cantidad, setCantidad] = useState<number | null>(0)
     const [activeStep, setActiveStep] = useState(0);
+    const [zonas, setZonas] = useState<Zona[]>([]);
+    const [zona, setZona] = useState<string>("");
+    //const [loading, setLoading] = useState<boolean>(true);
+    useEffect(() => {
+        const fetchZonas = async () => {
+            try {
+                const data = await getZonas();
+                if (Array.isArray(data.zonas)) {
+                    setZonas(data.zonas); // ahora sí es un array
+                    if (data.zonas.length > 0) setZona(String(data.zonas[0].id)); // inicializa con la primera zona
+                } else {
+                    console.error("La API no devolvió un array de zonas");
+                }
+            } catch (error) {
+                console.error("Error al cargar zonas:", error);
+            }
+        };
 
+        fetchZonas(); // llamamos a la función al montar
+    }, []);
+    const handleZonaChange = (event: SelectChangeEvent<string>) => {
+        setZona(event.target.value);
+    };
     // Productos agregados al pedido
     const [productosAgregados, setProductosAgregados] = useState<IProductSelected[]>(() => {
         const saved = localStorage.getItem("productosAgregados");
@@ -966,7 +998,7 @@ export function CrearPedidoPage() {
                                                                                 }}
                                                                             />
                                                                         }
-                                                                        label={a.direccion}
+                                                                        label={`${a.direccion} - ${a.zona ?? 'Sin zona asignada'}`}
                                                                         sx={{
                                                                             background: '#fff',
                                                                             borderRadius: '15px',
@@ -1041,6 +1073,7 @@ export function CrearPedidoPage() {
                                         const data = {
                                             direccion: String(formData.get("direccion") ?? ''),
                                             telefono: String(formData.get("telefono") ?? ''),
+                                            zona: zona
                                         };
 
                                         createAddresClient(data);
@@ -1062,6 +1095,25 @@ export function CrearPedidoPage() {
                                         fullWidth
                                         type="tel"
                                     />
+                                    {/* Dropdown de Zonas */}
+                                    <FormControl fullWidth variant="outlined">
+                                        <InputLabel id="zona-label">Zona</InputLabel>
+                                        <Select
+                                            labelId="zona-label"
+                                            value={zona}
+                                            onChange={handleZonaChange}
+                                            label="Zona"
+                                            required
+                                        >
+
+                                            {zonas.map((z) => (
+
+                                                <MenuItem key={z.id} value={z.id}>
+                                                    {z.nombre}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
                                     <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
                                         <Button onClick={handleClose} color="error" variant="contained" disabled={saveAddress}>
                                             Cancelar

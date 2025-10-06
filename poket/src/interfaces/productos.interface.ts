@@ -4,6 +4,16 @@ export interface IProductosTable {
   clave: string;
 }
 
+interface Zona {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+}
+
+export interface ZonasResponse {
+  success: boolean;
+  zonas: Zona[];
+}
 export interface IProductList {
   id: number;
   clave: string;

@@ -26,6 +26,7 @@ export interface IDataAddress {
   direccion: string;
   telefono: string;
   fecha_creacion: string;
+  zona: string;
 }
 
 export interface IResponseCreateAddress {

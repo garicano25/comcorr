@@ -2,6 +2,7 @@ import { AxiosResponse } from "axios";
 import {
   IProductListService,
   IProductoUpdate,
+  ZonasResponse,
 } from "../interfaces/productos.interface";
 import { clientAdmin } from "../interceptors/axios.client";
 import { IResponseSendEmail } from "../interfaces/pedidos.interface";
@@ -18,7 +19,18 @@ export const getProducts = (limit: number, search: string) => {
     }
   });
 };
-
+export const getZonas = (): Promise<ZonasResponse> => {
+  return new Promise<ZonasResponse>(async (resolve, reject) => {
+    try {
+      const response: AxiosResponse<ZonasResponse> = await clientAdmin.get(
+        "/zonas"
+      );
+      resolve(response.data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 export const updatesProducts = () => {
   return new Promise<IResponseSendEmail>(async (resolve, reject) => {
     try {
