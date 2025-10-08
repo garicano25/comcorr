@@ -3,36 +3,24 @@ import { useParams } from "react-router";
 import { LoaderComponent } from "../../components/Globales/Loader.component";
 import {
   Box,
-  Button,
-  CircularProgress,
-  Icon,
   TextField,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { IArticulosPedido, IListPedidos, IResponseInfoPedido, IResponseSendEmail } from "../../interfaces/pedidos.interface";
-import { getInfoPedido, sendEmailService, sendUpdateCommentService } from "../../services/pedido.services";
+import { IArticulosPedido, IListPedidos, IResponseInfoPedido } from "../../interfaces/pedidos.interface";
+import { getInfoPedido } from "../../services/pedido.services";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales";
-import { useAlert } from "../../context/AlertProviderContext";
-import { useSnackbar } from "notistack";
-import DescargarPDF from "../../components/PDF/PdfCreate.component";
 import { formatDate } from "../../utils/function.global";
 
 export function ConsultarPedidoFacturacion() {
   const params = useParams();
-  const [pedido_id] = useState(params.id)
   const [loader, setLoader] = useState<boolean>(true);
-  const [send, setSend] = useState<boolean>(false);
-  const [loaderUpdate, setLoaderUpdate] = useState<boolean>(false);
   const [data, setData] = useState<IListPedidos | null>(null);
   const [rows, setRows] = useState<IArticulosPedido[]>([]);
-  const { setAlert } = useAlert();
-  const { enqueueSnackbar } = useSnackbar();
   const [comentario, setComentario] = useState<string>("")
   const totalGeneral = rows.reduce((acc, row) => acc + Number(row.total), 0);
-  const [dataPedido, setDataPedido] = useState<IResponseInfoPedido>()
   const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
 
 
@@ -152,7 +140,7 @@ export function ConsultarPedidoFacturacion() {
         const response: IResponseInfoPedido = await getInfoPedido({ idPedido: Number(params.id) });
 
         // Setear los Estados de las respuestas
-        setDataPedido(response)
+
         setData(response.pedido);
         setRows(response.articulos)
         setComentario(response.pedido.comentarios || "")
@@ -182,67 +170,11 @@ export function ConsultarPedidoFacturacion() {
   };
 
 
-  // Manejador de Actualizacion del pedido
-  const handleUpdateComment = async () => {
-    setLoaderUpdate(true);
-
-    try {
-
-
-      const payload = { comentarios: comentario }
-
-      const response = await sendUpdateCommentService(payload, Number(pedido_id));
-      if (response.success) {
-        setAlert({
-          title: 'Pedido actualizado',
-          text: 'El pedido fue actualizado con exito.',
-          open: true,
-          icon: 'success',
-        });
-
-      }
-
-    } catch (error) {
-
-      console.log("Error to Update Pedido: " + error)
-      enqueueSnackbar("Hubo un error al intentar actualizar el pedido, por favor intente nuevamente.", { variant: 'error' });
-
-    } finally {
-
-      setLoaderUpdate(false);
-    }
-  };
 
 
 
 
 
-  //Send Email
-  const sendEmail = async () => {
-
-    setSend(true)
-    try {
-
-      const data: IResponseSendEmail = await sendEmailService({ idPedido: Number(pedido_id || 0) })
-
-      if (data.success) {
-
-        enqueueSnackbar("Correo enviado exitosamente", { variant: 'success' });
-      } else {
-
-        enqueueSnackbar("Ocurrio un error al enviar correo, intentelo nuevamente", { variant: 'success' });
-      }
-    } catch (error) {
-
-      console.log(error);
-      enqueueSnackbar("Ocurrio un error al enviar correo, intentelo nuevamente", { variant: 'success' });
-
-    } finally {
-      setSend(false)
-    }
-
-
-  }
 
   //Carga de la información al iniciar el componente
   useEffect(() => {
@@ -272,16 +204,7 @@ export function ConsultarPedidoFacturacion() {
           <Box sx={{ display: "grid", gap: 2, mb: 2 }}>
             {/* Botones de accion  */}
             <Box sx={{ maxWidth: 650, width: { xs: 320, sm: 320, lg: 650, md: 650 } }}>
-              <Button
-                type="button"
-                variant="contained"
-                startIcon={<Icon>forward_to_inbox</Icon>}
-                onClick={sendEmail}
-                sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" }, color: "white", mb: 2, mt: 2 }}>
-                {send ? <><CircularProgress color="inherit" size="22px" /> Enviando ... </> : "Enviar por correo"}
-              </Button>
 
-              <DescargarPDF dataPedido={dataPedido} />
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, mt: 1 }}>
                 Pedido creado por: {data.Creado_por}
               </Typography>
@@ -434,15 +357,7 @@ export function ConsultarPedidoFacturacion() {
 
 
 
-          <Button
-            type="button"
-            variant="contained"
-            disabled={loaderUpdate}
-            onClick={() => handleUpdateComment()}
-            startIcon={<Icon>edit_note</Icon>}
-            sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" }, color: "white", mb: 2, mt: 2 }}>
-            {loaderUpdate ? <><CircularProgress color="inherit" size="23px" sx={{ mr: 2 }} />Actualizando... </> : 'Actualizar'}
-          </Button>
+
         </Box>
       )}
     </>

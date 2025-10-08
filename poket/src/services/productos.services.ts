@@ -22,10 +22,8 @@ export const getProducts = (limit: number, search: string) => {
 export const getZonas = (): Promise<ZonasResponse> => {
   return new Promise<ZonasResponse>(async (resolve, reject) => {
     try {
-      const response: AxiosResponse<ZonasResponse> = await clientAdmin.get(
-        "/zonas"
-      );
-      resolve(response.data);
+      const response = await clientAdmin.get("/Zonas");
+      resolve(response.data); // response.data ahora es de tipo ZonasResponse
     } catch (e) {
       reject(e);
     }

@@ -1065,28 +1065,65 @@ export function CrearPedidoPage() {
                                 <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
                                     Agregar nueva dirección
                                 </Typography>
+
                                 <Box
                                     component="form"
                                     onSubmit={(e) => {
-                                        e.preventDefault()
+                                        e.preventDefault();
                                         const formData = new FormData(e.currentTarget);
+
                                         const data = {
-                                            direccion: String(formData.get("direccion") ?? ''),
-                                            telefono: String(formData.get("telefono") ?? ''),
-                                            zona: zona
+                                            calle: String(formData.get("calle") ?? ""),
+                                            municipio: String(formData.get("municipio") ?? ""),
+                                            numero: String(formData.get("numero") ?? ""),
+                                            colonia: String(formData.get("colonia") ?? ""),
+                                            telefono: String(formData.get("telefono") ?? ""),
+                                            codigo_postal: String(formData.get("codigo_postal") ?? ""),
+                                            estado: String(formData.get("estado") ?? ""),
+                                            zona: zona, // sigue usando tu hook de zona actual
                                         };
 
                                         createAddresClient(data);
                                     }}
                                     sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                                 >
+                                    {/* Calle */}
                                     <TextField
-                                        label="Dirección"
-                                        name="direccion"
+                                        label="Calle"
+                                        name="calle"
                                         variant="outlined"
                                         required
                                         fullWidth
                                     />
+
+                                    {/* Municipio / Ciudad */}
+                                    <TextField
+                                        label="Municipio / Ciudad"
+                                        name="municipio"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Número exterior/interior */}
+                                    <TextField
+                                        label="Número exterior / interior"
+                                        name="numero"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Colonia */}
+                                    <TextField
+                                        label="Colonia"
+                                        name="colonia"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Teléfono */}
                                     <TextField
                                         label="Teléfono"
                                         name="telefono"
@@ -1095,36 +1132,63 @@ export function CrearPedidoPage() {
                                         fullWidth
                                         type="tel"
                                     />
+
+                                    {/* Código Postal */}
+                                    <TextField
+                                        label="Código Postal"
+                                        name="codigo_postal"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Dropdown de Estado */}
+                                    <FormControl fullWidth variant="outlined" required>
+                                        <InputLabel id="estado-label">Estado</InputLabel>
+                                        <Select
+                                            labelId="estado-label"
+                                            name="estado"
+                                            label="Estado"
+                                            defaultValue=""
+                                        >
+                                            {zonas.map((z) => (
+                                                <MenuItem key={z.id} value={z.id}>
+                                                    {z.descripcion}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+
                                     {/* Dropdown de Zonas */}
-                                    <FormControl fullWidth variant="outlined">
+                                    <FormControl fullWidth variant="outlined" required>
                                         <InputLabel id="zona-label">Zona</InputLabel>
                                         <Select
                                             labelId="zona-label"
                                             value={zona}
                                             onChange={handleZonaChange}
                                             label="Zona"
-                                            required
                                         >
-
                                             {zonas.map((z) => (
-
                                                 <MenuItem key={z.id} value={z.id}>
                                                     {z.nombre}
                                                 </MenuItem>
                                             ))}
                                         </Select>
                                     </FormControl>
+
+                                    {/* Botones */}
                                     <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
                                         <Button onClick={handleClose} color="error" variant="contained" disabled={saveAddress}>
                                             Cancelar
                                         </Button>
                                         <Button type="submit" variant="contained" color="primary" disabled={saveAddress}>
-                                            {saveAddress ? <CircularProgress color="inherit" size="25px" /> : 'Guardar'}
+                                            {saveAddress ? <CircularProgress color="inherit" size="25px" /> : "Guardar"}
                                         </Button>
                                     </Box>
                                 </Box>
                             </Box>
                         </Modal>
+
                     </Box>
                 </motion.div>
             )}

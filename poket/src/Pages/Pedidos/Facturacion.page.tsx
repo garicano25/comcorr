@@ -5,7 +5,8 @@ import { useNavigate } from "react-router";
 import { useParamsRoute } from "../../context/ParamsRouteContext";
 import {
     Box, Button, Chip, Icon, Menu, MenuItem, TextField, Tooltip,
-    useMediaQuery, useTheme, Zoom, CircularProgress
+    useMediaQuery, useTheme, Zoom, CircularProgress,
+    Checkbox
 } from "@mui/material";
 import Autocomplete from '@mui/material/Autocomplete';
 import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
@@ -51,15 +52,26 @@ export function FacturacionPage() {
     const open = Boolean(anchorEl);
     const token: IUser | null = decodeToken();
 
-    // Filtros
-    const [filtros, setFiltros] = useState({
-        estado: '',
-        cliente_id: '',
-        vendedor_id: '',
-        fecha: '',
-        fechafin: ''
-    });
 
+    // Filtros iniciales desde localStorage
+    const filtrosGuardados = JSON.parse(localStorage.getItem('filtrosPedidos') || '{}');
+
+    const filtrosIniciales = {
+        estado: filtrosGuardados.estado || '',
+        cliente_id: filtrosGuardados.cliente_id || '',
+        vendedor_id: Array.isArray(filtrosGuardados.vendedor_id)
+            ? filtrosGuardados.vendedor_id
+            : filtrosGuardados.vendedor_id
+                ? [filtrosGuardados.vendedor_id]
+                : [], // 👈 ahora siempre será un array
+        fecha: filtrosGuardados.fecha || '',
+        fechafin: filtrosGuardados.fechafin || '',
+        zona: filtrosGuardados.zona || ''
+    };
+
+    // Filtros temporales (inputs)
+    const [filtros, setFiltros] = useState(filtrosIniciales);
+    // Filtros aplicados para la búsqueda
     const useIsMobile = () => {
         const theme = useTheme();
         return useMediaQuery(theme.breakpoints.down('sm'));
@@ -141,10 +153,14 @@ export function FacturacionPage() {
         }
     };
 
-    // Maneja cambio de vendedor
     const handleVendedorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFiltros(prev => ({ ...prev, vendedor_id: event.target.value }));
+        const { value } = event.target;
+        setFiltros({
+            ...filtros,
+            vendedor_id: typeof value === 'string' ? value.split(',') : value,
+        });
     };
+
 
 
     // Maneja cambio de fecha
@@ -203,7 +219,7 @@ export function FacturacionPage() {
             renderCell: (params) => (
                 <div>
                     <Button
-                        disabled={params.row.estado === 'surtido' || token?.role !== 7}
+                        disabled={params.row.estado === 'surtido' || token?.role !== 7 && token?.role !== 1}
                         onClick={(event) => handleClick(event, params.row)}
                         variant="text"
                     >
@@ -327,7 +343,7 @@ export function FacturacionPage() {
             return;
         }
 
-        if (token?.role === 7) {
+        if (token?.role === 7 || token?.role === 1) {
             setAlert({
                 title: '¿Está seguro de aprobar este pedido?',
                 text: 'Es necesario confirmar para continuar.',
@@ -424,17 +440,32 @@ export function FacturacionPage() {
                         select
                         label="Vendedor"
                         size="small"
-                        value={filtros.vendedor_id}
+                        value={Array.isArray(filtros.vendedor_id) ? filtros.vendedor_id : []} // ✅ siempre array
                         onChange={handleVendedorChange}
                         sx={{ minWidth: 150 }}
+                        SelectProps={{
+                            multiple: true,
+                            renderValue: (selected) =>
+                                (selected as string[]).length === 0
+                                    ? 'Todos'
+                                    : (selected as string[]).map((id) => {
+                                        const vendedor = vendedoresOptions.find((v) => String(v.id) === id);
+                                        return vendedor ? vendedor.nombre : id;
+                                    }).join(', ')
+                        }}
                     >
-                        <MenuItem value="">Todos</MenuItem>
                         {vendedoresOptions.map((vendedor) => (
                             <MenuItem key={vendedor.id} value={String(vendedor.id)}>
+                                <Checkbox
+                                    checked={Array.isArray(filtros.vendedor_id) && filtros.vendedor_id.includes(String(vendedor.id))} // ✅ seguro
+                                />
                                 {vendedor.nombre}
                             </MenuItem>
                         ))}
                     </TextField>
+
+
+
 
 
 
@@ -464,8 +495,11 @@ export function FacturacionPage() {
                     />
                     <Button
                         variant="outlined"
-                        onClick={() => setFiltros({ estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '' })}
-                    >
+                        onClick={() => {
+                            const filtrosLimpios = { estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '', zona: '' };
+                            setFiltros(filtrosLimpios)
+                            localStorage.removeItem('filtrosPedidos');
+                        }}>
                         Limpiar filtros
                     </Button>
                 </Box>

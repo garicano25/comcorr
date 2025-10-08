@@ -4,7 +4,8 @@ import { useNavigate } from "react-router";
 import { useParamsRoute } from "../../context/ParamsRouteContext";
 import {
     Box, Button, Chip, Icon, Menu, MenuItem, TextField, Tooltip,
-    useMediaQuery, useTheme, Zoom, CircularProgress
+    useMediaQuery, useTheme, Zoom, CircularProgress,
+    Checkbox
 } from "@mui/material";
 import Autocomplete from '@mui/material/Autocomplete';
 import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
@@ -74,11 +75,20 @@ export function ListarPedidoPage() {
     const token: IUser | null = decodeToken();
 
     // Filtros iniciales desde localStorage
+
+
+
+    // Filtros iniciales desde localStorage
     const filtrosGuardados = JSON.parse(localStorage.getItem('filtrosPedidos') || '{}');
+
     const filtrosIniciales = {
         estado: filtrosGuardados.estado || '',
         cliente_id: filtrosGuardados.cliente_id || '',
-        vendedor_id: filtrosGuardados.vendedor_id || '',
+        vendedor_id: Array.isArray(filtrosGuardados.vendedor_id)
+            ? filtrosGuardados.vendedor_id
+            : filtrosGuardados.vendedor_id
+                ? [filtrosGuardados.vendedor_id]
+                : [], // 👈 ahora siempre será un array
         fecha: filtrosGuardados.fecha || '',
         fechafin: filtrosGuardados.fechafin || '',
         zona: filtrosGuardados.zona || ''
@@ -167,9 +177,12 @@ export function ListarPedidoPage() {
     };
 
     const handleVendedorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFiltros(prev => ({ ...prev, vendedor_id: event.target.value }));
+        const { value } = event.target;
+        setFiltros({
+            ...filtros,
+            vendedor_id: typeof value === 'string' ? value.split(',') : value,
+        });
     };
-
     const handleEstadoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFiltros(prev => ({ ...prev, estado: event.target.value }));
     };
@@ -454,17 +467,30 @@ export function ListarPedidoPage() {
                         select
                         label="Vendedor"
                         size="small"
-                        value={filtros.vendedor_id}
+                        value={filtros.vendedor_id} // debe ser un array, ej: []
                         onChange={handleVendedorChange}
                         sx={{ minWidth: 150 }}
+                        SelectProps={{
+                            multiple: true,
+                            renderValue: (selected) =>
+                                (selected as string[]).length === 0
+                                    ? 'Todos'
+                                    : (selected as string[]).map((id) => {
+                                        const vendedor = vendedoresOptions.find((v) => String(v.id) === id);
+                                        return vendedor ? vendedor.nombre : id;
+                                    }).join(', ')
+                        }}
                     >
-                        <MenuItem value="">Todos</MenuItem>
                         {vendedoresOptions.map((vendedor) => (
                             <MenuItem key={vendedor.id} value={String(vendedor.id)}>
+                                <Checkbox
+                                    checked={filtros.vendedor_id.includes(String(vendedor.id))}
+                                />
                                 {vendedor.nombre}
                             </MenuItem>
                         ))}
                     </TextField>
+
 
                     <TextField
                         select

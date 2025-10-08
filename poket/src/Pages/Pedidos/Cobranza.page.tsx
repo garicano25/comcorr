@@ -5,7 +5,8 @@ import { useNavigate } from "react-router";
 import { useParamsRoute } from "../../context/ParamsRouteContext";
 import {
     Box, Button, Chip, Icon, Menu, MenuItem, TextField, Tooltip,
-    useMediaQuery, useTheme, Zoom, CircularProgress
+    useMediaQuery, useTheme, Zoom, CircularProgress,
+    Checkbox
 } from "@mui/material";
 import Autocomplete from '@mui/material/Autocomplete';
 import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
@@ -50,16 +51,31 @@ export function CobranzaPage() {
 
     const open = Boolean(anchorEl);
     const token: IUser | null = decodeToken();
+    // 🧩 1️⃣ Recuperar filtros guardados del localStorage
+    const filtrosGuardados = JSON.parse(localStorage.getItem('filtrosPedidos') || '{}');
 
-    // Filtros
-    const [filtros, setFiltros] = useState({
-        estado: '',
-        cliente_id: '',
-        vendedor_id: '',
-        fecha: '',
-        fechafin: ''
-    });
+    // 🧩 2️⃣ Definir filtros iniciales (asegurando que vendedor_id siempre sea un array)
+    const filtrosIniciales = {
+        estado: filtrosGuardados.estado || '',
+        cliente_id: filtrosGuardados.cliente_id || '',
+        vendedor_id: Array.isArray(filtrosGuardados.vendedor_id)
+            ? filtrosGuardados.vendedor_id
+            : filtrosGuardados.vendedor_id
+                ? [filtrosGuardados.vendedor_id]
+                : [], // ✅ siempre array
+        fecha: filtrosGuardados.fecha || '',
+        fechafin: filtrosGuardados.fechafin || '',
+        zona: filtrosGuardados.zona || ''
+    };
 
+    // 🧩 3️⃣ Hooks de estado
+    const [filtros, setFiltros] = useState(filtrosIniciales);
+
+
+
+
+
+    // Filtros aplicados para la búsqueda
     const useIsMobile = () => {
         const theme = useTheme();
         return useMediaQuery(theme.breakpoints.down('sm'));
@@ -141,11 +157,13 @@ export function CobranzaPage() {
         }
     };
 
-    // Maneja cambio de vendedor
     const handleVendedorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFiltros(prev => ({ ...prev, vendedor_id: event.target.value }));
+        const { value } = event.target;
+        setFiltros({
+            ...filtros,
+            vendedor_id: typeof value === 'string' ? value.split(',') : value,
+        });
     };
-
 
     // Maneja cambio de fecha
     const handleFechaInicioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -418,22 +436,34 @@ export function CobranzaPage() {
                         )}
                     />
 
-                    {/* Vendedor Dropdown */}
                     <TextField
                         select
                         label="Vendedor"
                         size="small"
-                        value={filtros.vendedor_id}
+                        value={Array.isArray(filtros.vendedor_id) ? filtros.vendedor_id : []} // ✅ siempre array
                         onChange={handleVendedorChange}
                         sx={{ minWidth: 150 }}
+                        SelectProps={{
+                            multiple: true,
+                            renderValue: (selected) =>
+                                (selected as string[]).length === 0
+                                    ? 'Todos'
+                                    : (selected as string[]).map((id) => {
+                                        const vendedor = vendedoresOptions.find((v) => String(v.id) === id);
+                                        return vendedor ? vendedor.nombre : id;
+                                    }).join(', ')
+                        }}
                     >
-                        <MenuItem value="">Todos</MenuItem>
                         {vendedoresOptions.map((vendedor) => (
                             <MenuItem key={vendedor.id} value={String(vendedor.id)}>
+                                <Checkbox
+                                    checked={Array.isArray(filtros.vendedor_id) && filtros.vendedor_id.includes(String(vendedor.id))} // ✅ seguro
+                                />
                                 {vendedor.nombre}
                             </MenuItem>
                         ))}
                     </TextField>
+
 
 
 
@@ -463,8 +493,11 @@ export function CobranzaPage() {
                     />
                     <Button
                         variant="outlined"
-                        onClick={() => setFiltros({ estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '' })}
-                    >
+                        onClick={() => {
+                            const filtrosLimpios = { estado: '', cliente_id: '', vendedor_id: '', fecha: '', fechafin: '', zona: '' };
+                            setFiltros(filtrosLimpios)
+                            localStorage.removeItem('filtrosPedidos');
+                        }}>
                         Limpiar filtros
                     </Button>
                 </Box>
