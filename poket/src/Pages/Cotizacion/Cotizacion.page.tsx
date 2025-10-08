@@ -17,8 +17,12 @@ import {
     FormLabel,
     FormControl,
     Modal,
-    Divider,
     IconButton,
+    InputLabel,
+    Select,
+    MenuItem,
+    Divider,
+    SelectChangeEvent
 } from "@mui/material";
 import Radio from '@mui/material/Radio';
 import Grid from '@mui/material/Grid2';
@@ -32,7 +36,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AsyncSelect from "react-select/async";
 import { IProductList, IProductListService } from "../../interfaces/productos.interface";
-import { getProducts } from "../../services/productos.services";
+import { getProducts, getZonas } from "../../services/productos.services";
 import { ICliente, IDataAddress, IDataClientes, IResponseCreateAddress } from "../../interfaces/catalogos.interface";
 import { createAddressClient, getAddressClient, getClientes } from "../../services/clientes.services";
 import { LoaderComponent } from "../../components/Globales/Loader.component";
@@ -40,7 +44,12 @@ import { style, styleModal } from "../../utils/styles.aditional";
 import { useSnackbar } from "notistack";
 import { createPedidoService } from "../../services/pedido.services";
 
-
+// Tipos
+interface Zona {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+}
 export function CotizacionPage() {
 
     const navigate = useNavigate();
@@ -62,52 +71,73 @@ export function CotizacionPage() {
     const [selectedOptionClient, setSelectedOptionClient] = useState<any>(null);
     const [optionClientes, setOptioClientes] = useState<{ value: number; label: string; cliente: ICliente }[]>([])
     const [address, setAddress] = useState<IDataAddress[]>([])
-    const [addresId, setAddresId] = useState<number | null >(null)
+    const [addresId, setAddresId] = useState<number | null>(null)
     const [loadAddress, setLoadAddress] = useState(false);
     const [saveAddress, setSaveAddress] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
     const totalGeneral = productosAgregados.reduce((acc, row) => acc + (Number(row.precio_unitario) * Number(row.cantidad)), 0);
     const [comentario, setComentario] = useState<string>("")
+    const [zonas, setZonas] = useState<Zona[]>([]);
+    const [zona, setZona] = useState<string>("");
 
+    useEffect(() => {
+        const fetchZonas = async () => {
+            try {
+                const data = await getZonas();
+                if (Array.isArray(data.zonas)) {
+                    setZonas(data.zonas); // ahora sí es un array
+                    if (data.zonas.length > 0) setZona(String(data.zonas[0].id)); // inicializa con la primera zona
+                } else {
+                    console.error("La API no devolvió un array de zonas");
+                }
+            } catch (error) {
+                console.error("Error al cargar zonas:", error);
+            }
+        };
 
+        fetchZonas(); // llamamos a la función al montar
+    }, []);
+    const handleZonaChange = (event: SelectChangeEvent<string>) => {
+        setZona(event.target.value);
+    };
     // Modal Add New Dress
     const [open, setOpen] = React.useState(false);
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
     // ================ Steps ==================
-   
-   const steps = [
+
+    const steps = [
         {
             name: 'Lista de productos',
             icon: (
-            <Icon fontSize="large" sx={style}>
-                {activeStep > 0 ? 'check_circle' : 'list'}
-            </Icon>
+                <Icon fontSize="large" sx={style}>
+                    {activeStep > 0 ? 'check_circle' : 'list'}
+                </Icon>
             ),
         },
         {
             name: 'Detalles del pedido',
             icon: (
-            <Icon fontSize="large" sx={style}>
-                {activeStep > 1 ? 'check_circle' : 'assignment'}
-            </Icon>
+                <Icon fontSize="large" sx={style}>
+                    {activeStep > 1 ? 'check_circle' : 'assignment'}
+                </Icon>
             ),
-       },
-          {
+        },
+        {
             name: 'Detalle de Cotización',
             icon: (
-            <Icon fontSize="large" sx={style}>
-                {activeStep > 2 ? 'check_circle' : 'calculate'}
-            </Icon>
+                <Icon fontSize="large" sx={style}>
+                    {activeStep > 2 ? 'check_circle' : 'calculate'}
+                </Icon>
             ),
         },
         {
             name: 'Confirmación de pedido',
             icon: (
-            <Icon fontSize="large" sx={style}>
-                {activeStep === 3 ? 'local_mall' : activeStep > 2 ? 'check_circle' : 'local_mall'}
-            </Icon>
+                <Icon fontSize="large" sx={style}>
+                    {activeStep === 3 ? 'local_mall' : activeStep > 2 ? 'check_circle' : 'local_mall'}
+                </Icon>
             ),
         },
     ];
@@ -131,7 +161,7 @@ export function CotizacionPage() {
             width: 250,
             headerClassName: '--header-table'
         },
-       {
+        {
             headerName: "Cantidad",
             field: "cantidad",
             type: "number",
@@ -147,9 +177,9 @@ export function CotizacionPage() {
                 const updateCantidad = (newCantidad: number) => {
                     setProductosAgregados((prev) => {
                         const updated = prev.map((item) =>
-                        item.id === params.row.id
-                            ? { ...item, cantidad: newCantidad }
-                            : item
+                            item.id === params.row.id
+                                ? { ...item, cantidad: newCantidad }
+                                : item
                         );
 
                         return updated;
@@ -158,60 +188,60 @@ export function CotizacionPage() {
 
                 // Aumentar
                 const handleIncrease = () => {
-                const newVal = Number(value) + 1;
-                setValue(newVal.toString());
-                updateCantidad(newVal);
+                    const newVal = Number(value) + 1;
+                    setValue(newVal.toString());
+                    updateCantidad(newVal);
                 };
 
                 // Disminuir
                 const handleDecrease = () => {
-                const newVal = Math.max(Number(value) - 1, 0);
-                setValue(newVal.toString());
-                updateCantidad(newVal);
+                    const newVal = Math.max(Number(value) - 1, 0);
+                    setValue(newVal.toString());
+                    updateCantidad(newVal);
                 };
 
                 // Cambiar manualmente
                 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                const val = e.target.value;
-                if (val === "" || /^[0-9\b]+$/.test(val)) {
-                    setValue(val); // Permitir vacío mientras escribe
-                }
+                    const val = e.target.value;
+                    if (val === "" || /^[0-9\b]+$/.test(val)) {
+                        setValue(val); // Permitir vacío mientras escribe
+                    }
                 };
 
                 // Confirmar al salir del input
                 const handleBlur = () => {
-                const numericValue = value === "" ? 0 : parseInt(value, 10);
-                setValue(numericValue.toString());
-                updateCantidad(numericValue);
+                    const numericValue = value === "" ? 0 : parseInt(value, 10);
+                    setValue(numericValue.toString());
+                    updateCantidad(numericValue);
                 };
 
                 return (
-                <Box display="flex" alignItems="center" gap={1}>
-                    <IconButton
-                        size="small"
-                        onClick={handleDecrease}
-                        sx={{ border: "1px solid #ccc" }}
-                    >
-                        <Icon>remove</Icon>
-                    </IconButton>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <IconButton
+                            size="small"
+                            onClick={handleDecrease}
+                            sx={{ border: "1px solid #ccc" }}
+                        >
+                            <Icon>remove</Icon>
+                        </IconButton>
 
-                    <TextField
-                        type="number"
-                        value={value}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        inputProps={{ style: { textAlign: "center", width: "60px" } }}
-                        size="small"
-                    />
+                        <TextField
+                            type="number"
+                            value={value}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            inputProps={{ style: { textAlign: "center", width: "60px" } }}
+                            size="small"
+                        />
 
-                    <IconButton
-                        size="small"
-                        onClick={handleIncrease}
-                        sx={{ border: "1px solid #ccc" }}
-                    >
-                        <Icon>add</Icon>
-                    </IconButton>
-                </Box>
+                        <IconButton
+                            size="small"
+                            onClick={handleIncrease}
+                            sx={{ border: "1px solid #ccc" }}
+                        >
+                            <Icon>add</Icon>
+                        </IconButton>
+                    </Box>
                 );
             },
         },
@@ -225,21 +255,21 @@ export function CotizacionPage() {
             headerAlign: 'center',
             headerClassName: '--header-table',
             renderCell: (params) => (
-                <Tooltip title="Eliminar producto"  slots={{ transition: Zoom }}>
+                <Tooltip title="Eliminar producto" slots={{ transition: Zoom }}>
                     <Button
-                    variant="text"
-                    onClick={() => {
-                        setProductosAgregados((prev) => prev.filter((item) => item.id !== params.row.id));
-                    }}
-                    sx={{ color: 'red', ml: 1, boxShadow: 'none' }}>
-                         <Icon fontSize="medium">delete</Icon>
+                        variant="text"
+                        onClick={() => {
+                            setProductosAgregados((prev) => prev.filter((item) => item.id !== params.row.id));
+                        }}
+                        sx={{ color: 'red', ml: 1, boxShadow: 'none' }}>
+                        <Icon fontSize="medium">delete</Icon>
                     </Button>
                 </Tooltip>
             ),
         },
     ];
 
-    
+
     // ================ Funciones ==================
 
     function getTimeNow(): string {
@@ -256,7 +286,7 @@ export function CotizacionPage() {
     }
 
 
-     const showAlert = () => {
+    const showAlert = () => {
         setAlert({
             title: '¿Está seguro de crear un pedido con base en esta cotización?',
             text: 'Al confirmar esta pedido se creará un folio para su seguimiento.',
@@ -266,30 +296,30 @@ export function CotizacionPage() {
         });
     };
 
-    const confirmPedido = async () => { 
+    const confirmPedido = async () => {
 
         setActiveStep((prev) => prev + 1);
         setSendingPedido(true);
-    
-        try {  
+
+        try {
 
             if (addresId == null || clienteSeleccionado?.id == null) {
 
                 setActiveStep((prev) => prev - 1);
                 enqueueSnackbar("Al parecer no ha seleccionado un Cliente o una Direcció, verifique la informacion para continuar.", { variant: 'warning' });
-                
+
                 setSendingPedido(false);
 
                 return;
 
-                
+
             } else {
-                
+
                 // Create Payload
                 const payload: IPayloadPedido = {
-                    direccion_id: addresId ,
+                    direccion_id: addresId,
                     cliente_id: clienteSeleccionado?.id,
-                    comentarios:comentario,
+                    comentarios: comentario,
                     articulos: productosAgregados.map(prod => ({
                         articulo_id: prod.articulo_id,
                         cantidad: prod.cantidad,
@@ -297,29 +327,29 @@ export function CotizacionPage() {
                     }))
                 };
 
-                const response : IResponseCreatePedido = await createPedidoService(payload);
+                const response: IResponseCreatePedido = await createPedidoService(payload);
                 setPedido(response.pedido_id)
                 setSendingPedido(false);
-                
+
             }
-            
-            
+
+
         } catch (error) {
 
-            console.log(error);  
+            console.log(error);
             setActiveStep((prev) => prev - 1);
             enqueueSnackbar("Hubo un error al crear el pedido, por favor intentelo de nuevo.", { variant: 'error' });
-            
+
             setSendingPedido(false);
-            
-        } 
+
+        }
 
     }
 
     //Funcion para Cambiar a precio convenido
     const handleCheckboxChange = () => {
-        setCantidad(null); 
-        setTotal(null); 
+        setCantidad(null);
+        setTotal(null);
         setModificarPrecio((prev) => !prev);
         setPrecio('')
     };
@@ -372,12 +402,12 @@ export function CotizacionPage() {
 
             setProductosAgregados((prevProductos) => [...prevProductos, newProduct]);
 
-            setProductoSeleccionado(null); 
-            setPrecio(''); 
-            setTotal(null); 
-            setCantidad(null); 
-            setModificarPrecio(false); 
-            setSelectedOption(null); 
+            setProductoSeleccionado(null);
+            setPrecio('');
+            setTotal(null);
+            setCantidad(null);
+            setModificarPrecio(false);
+            setSelectedOption(null);
 
         }
     };
@@ -385,7 +415,7 @@ export function CotizacionPage() {
 
     //Search Products
     const loadOptions = async (inputValue: string) => {
-        
+
         setLoadingProducto(true)
 
         if (!inputValue.trim()) return [];
@@ -408,10 +438,10 @@ export function CotizacionPage() {
             setLoadingProducto(false)
         }
     };
-    
+
     //Funcion ejecutada cada que selecciona un producti
-     const handleSelectChange = (option: any) => {
-        setSelectedOption(option); 
+    const handleSelectChange = (option: any) => {
+        setSelectedOption(option);
         if (option?.producto) {
             setProductoSeleccionado(option.producto);
         } else {
@@ -421,10 +451,10 @@ export function CotizacionPage() {
 
 
     //Get Clientes
-    const loadClientes = async (inputValue : string) => {
+    const loadClientes = async (inputValue: string) => {
         try {
-            
-            const data: IDataClientes = await getClientes(1,100, inputValue?.trim() || '');
+
+            const data: IDataClientes = await getClientes(1, 100, inputValue?.trim() || '');
             const options = data.clientes.map((cliente) => ({
                 value: cliente.id,
                 label: cliente.razon_social,
@@ -444,12 +474,12 @@ export function CotizacionPage() {
 
     //Funcion ejecutada cada que selecciona un cliente
     const handleSelectClientChange = (option: any) => {
-         
-        setSelectedOptionClient(option); 
+
+        setSelectedOptionClient(option);
 
         if (option?.cliente) {
             setClienteSeleccionado(option.cliente);
-     
+
             //Cargamos las dirreciones del cliente
             loadAddressToClient(option.cliente.id)
         } else {
@@ -459,12 +489,12 @@ export function CotizacionPage() {
     };
 
     //Funcion para obtener las dirreciones de un cliente
-    const loadAddressToClient = async (id:number) => {
-        
+    const loadAddressToClient = async (id: number) => {
+
         setAddresId(null)
         setLoadAddress(true)
         try {
-            
+
             const data: IDataAddress[] = await getAddressClient(id);
             setAddress(data)
 
@@ -472,7 +502,7 @@ export function CotizacionPage() {
             console.log("Error al cargar las dirreciones del cliente " + error);
             enqueueSnackbar("Hubo un error al cargar las direcciones del Cliente, por favor intente de nuevo ", { variant: 'error' });
             return [];
-        
+
         } finally {
 
             setLoadAddress(false)
@@ -480,28 +510,38 @@ export function CotizacionPage() {
     }
 
     //Funcion para crear una nueva dirreccion
-    const createAddresClient = async (data : {direccion:string, telefono:string}) => {
-        
+    //Funcion para crear una nueva dirreccion
+    const createAddresClient = async (data: {
+        calle: string,
+        municipio: string,
+        numero: string,
+        colonia: string,
+        telefono: string,
+        codigo_postal: string,
+        estado: string,
+        zona: string
+    }) => {
+
         const id = Number(clienteSeleccionado?.id)
 
         setSaveAddress(true)
-        
+
         try {
             const response: IResponseCreateAddress = await createAddressClient(data, id);
             handleClose();
-            
+
             if (response.success) {
                 loadAddressToClient(id)
 
             } else {
                 enqueueSnackbar("Error al crear una nueva dirección", { variant: 'error' });
-                
+
             }
-            
+
         } catch (error) {
             console.error("Error al guardar la nueva dirreccion", error);
             return [];
-        
+
         } finally {
 
             setSaveAddress(false)
@@ -518,7 +558,7 @@ export function CotizacionPage() {
                 setProduct_code(cartObj.product_code);
 
             } catch (error) {
-                
+
                 console.error("Error parsing cart from localStorage:", error);
             }
         }
@@ -527,11 +567,11 @@ export function CotizacionPage() {
         loadClientes('')
 
         if (modificarPrecio && precioSeleccionado !== "") {
-          setPrecioSeleccionado("");
+            setPrecioSeleccionado("");
         }
     }, [productosAgregados, modificarPrecio]);
 
-    
+
     // Si tenemos product_code, hacemos la búsqueda directa y seteamos selectedOption
     useEffect(() => {
         if (product_code) {
@@ -546,52 +586,52 @@ export function CotizacionPage() {
 
 
                 } catch (error) {
-                    
+
                     console.error("Error buscando producto inicial:", error);
                     enqueueSnackbar("Hubo un error al consultar el producto seleccionado, intentelo nuevamente ", { variant: 'error' });
 
-                
+
                 }
-                
+
             })();
         }
     }, [product_code]);
 
-    
+
     return (
         <Box>
             {/* Tracking */}
             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ duration: 0.4 }} style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: 2, marginBottom: 2, }}>
-                <Stepper activeStep={activeStep} alternativeLabel sx={{ width: "100%", maxWidth: 600, "& .MuiStepConnector-line": {borderTopWidth: 2, mt:2, ml:1, mr:1} }}>
+                <Stepper activeStep={activeStep} alternativeLabel sx={{ width: "100%", maxWidth: 600, "& .MuiStepConnector-line": { borderTopWidth: 2, mt: 2, ml: 1, mr: 1 } }}>
                     {steps.map((label, index) => (
-                    <Step key={index}>
-                        <StepLabel
-                        icon={label.icon}
-                        sx={{
-                            "& .MuiStepLabel-label": {
-                            fontWeight: "bold",
-                            color: "error.main",
-                            fontSize: "14px",
-                            },
-                            "& .Mui-completed": { color: "primary.main" },
-                            "& .Mui-active": { color: "text.primary" },
-                        }}
-                        >
-                        {label.name}
-                        </StepLabel>
-                    </Step>
+                        <Step key={index}>
+                            <StepLabel
+                                icon={label.icon}
+                                sx={{
+                                    "& .MuiStepLabel-label": {
+                                        fontWeight: "bold",
+                                        color: "error.main",
+                                        fontSize: "14px",
+                                    },
+                                    "& .Mui-completed": { color: "primary.main" },
+                                    "& .Mui-active": { color: "text.primary" },
+                                }}
+                            >
+                                {label.name}
+                            </StepLabel>
+                        </Step>
                     ))}
                 </Stepper>
             </motion.div>
-            
+
 
             {/* Step */}
             {activeStep === 0 && (
-                <Box component="div" sx={{ mt: 5, mb:3}}>
-    
-                    <Grid container spacing={3} sx={{mb:5}}>
+                <Box component="div" sx={{ mt: 5, mb: 3 }}>
+
+                    <Grid container spacing={3} sx={{ mb: 5 }}>
                         <Grid size={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
-                            
+
                             {/* Form consulta de producto */}
                             <motion.div key="formProductoData" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, y: 50 }} transition={{ duration: 0.8 }}>
                                 <Box sx={{ maxWidth: 650, mb: 4 }}>
@@ -601,7 +641,7 @@ export function CotizacionPage() {
 
                                     <AsyncSelect
                                         cacheOptions
-                                        loadOptions={loadOptions}  
+                                        loadOptions={loadOptions}
                                         value={selectedOption}
                                         placeholder="Buscar..."
                                         onChange={handleSelectChange}
@@ -618,15 +658,15 @@ export function CotizacionPage() {
                                         }}
                                     />
 
-                                    
+
 
                                 </Box>
                             </motion.div>
 
                             {/* Datos del producto */}
                             <Box component="div">
-                                <Typography variant="h6" sx={{ color: "primary.main", fontWeight: "bold", mb: 2, mt:3 }}>
-                                    {loadingProducto ? (<> Información del Producto <CircularProgress size={20} sx={{ ml: 2 }} /> </> ) : ( "Información del Producto")}
+                                <Typography variant="h6" sx={{ color: "primary.main", fontWeight: "bold", mb: 2, mt: 3 }}>
+                                    {loadingProducto ? (<> Información del Producto <CircularProgress size={20} sx={{ ml: 2 }} /> </>) : ("Información del Producto")}
                                 </Typography>
 
                                 {productoSeleccionado ? (
@@ -636,154 +676,154 @@ export function CotizacionPage() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 50 }}
                                         transition={{ duration: 0.7 }}
-                                        >
+                                    >
 
-                                    <Box sx={{ display: "grid", gap: 2, mb: 2 }}>
-                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2  }}>
-                                            <TextField
-                                                fullWidth
-                                                label="Nombre"
-                                                name="nombre"
-                                                value={productoSeleccionado.descripcion}
-                                                slotProps={{
-                                                    input: {
-                                                    readOnly: true,
-                                                    },
-                                                }}
-                                                sx={{ maxWidth: 320 }}
-                                            />
-                                            <TextField
-                                                fullWidth
-                                                label="Categoría"
-                                                name="categoria"
-                                                value={productoSeleccionado.categoria}
-                                                slotProps={{
-                                                input: {
-                                                    readOnly: true,
-                                                },
-                                                }}
-                                                sx={{ maxWidth: 320 }}
-                                            />
-                                        </Box>
-                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                                            <TextField fullWidth label="Marca" name="marca" value={productoSeleccionado.marca} sx={{ maxWidth: 320 }}
-                                                slotProps={{
-                                                    input: {
-                                                    readOnly: true,
-                                                    },
-                                                }}
-                                            />
-                                            <TextField fullWidth label="Stock" name="stock" value={productoSeleccionado.existencia} sx={{ maxWidth: 320 }}
-                                                slotProps={{
-                                                    input: {
-                                                    readOnly: true,
-                                                    },
-                                                }}
-                                            />
-                                        </Box>
-                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, ml: 2 }}>
-                                            <FormControl>
-                                                <FormLabel id="precio-radio" sx={{mb:1}}>Precio</FormLabel>
-                                                <RadioGroup row aria-labelledby="precio-radio" name="precio-radio" value={precio} onChange={(e) => setPrecio(e.target.value)}>
-                                                   <FormControlLabel
-                                                        value={Number(productoSeleccionado.precio1)}
-                                                        disabled={modificarPrecio}
-                                                        control={
-                                                            <Radio
-                                                            icon={<RadioButtonUncheckedIcon />}
-                                                            checkedIcon={<CheckCircleIcon />}
-                                                            sx={{
-                                                                color: '#ccc',
-                                                                '&.Mui-checked': {
-                                                                color: '#2196f3', // azul al estar seleccionado
-                                                                transform: 'scale(1.2)',
-                                                                transition: 'all 0.3s ease',
-                                                                },
-                                                            }}
-                                                            />
-                                                        }
-                                                        label={`$ ${productoSeleccionado.precio1}`}
-                                                        sx={{
-                                                            background: '#fff',
-                                                            borderRadius: '15px',
-                                                            padding: '8px 16px',
-                                                            marginRight: '30px',
-                                                            marginBottom:'10px',
-                                                            border: '2px solid transparent',
-                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                                            transition: 'all 0.3s ease',
-                                                            '&:hover': {
-                                                                boxShadow: '0 0 10px rgba(16, 128, 219, 0.3)',
-                                                                border: '2px solid #234596',
-                                                                cursor: 'pointer',
-                                                            },
-                                                                '&.Mui-checked': {
-                                                                border: '2px solid #234596',
+                                        <Box sx={{ display: "grid", gap: 2, mb: 2 }}>
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Nombre"
+                                                    name="nombre"
+                                                    value={productoSeleccionado.descripcion}
+                                                    slotProps={{
+                                                        input: {
+                                                            readOnly: true,
+                                                        },
+                                                    }}
+                                                    sx={{ maxWidth: 320 }}
+                                                />
+                                                <TextField
+                                                    fullWidth
+                                                    label="Categoría"
+                                                    name="categoria"
+                                                    value={productoSeleccionado.categoria}
+                                                    slotProps={{
+                                                        input: {
+                                                            readOnly: true,
+                                                        },
+                                                    }}
+                                                    sx={{ maxWidth: 320 }}
+                                                />
+                                            </Box>
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                                                <TextField fullWidth label="Marca" name="marca" value={productoSeleccionado.marca} sx={{ maxWidth: 320 }}
+                                                    slotProps={{
+                                                        input: {
+                                                            readOnly: true,
+                                                        },
+                                                    }}
+                                                />
+                                                <TextField fullWidth label="Stock" name="stock" value={productoSeleccionado.existencia} sx={{ maxWidth: 320 }}
+                                                    slotProps={{
+                                                        input: {
+                                                            readOnly: true,
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, ml: 2 }}>
+                                                <FormControl>
+                                                    <FormLabel id="precio-radio" sx={{ mb: 1 }}>Precio</FormLabel>
+                                                    <RadioGroup row aria-labelledby="precio-radio" name="precio-radio" value={precio} onChange={(e) => setPrecio(e.target.value)}>
+                                                        <FormControlLabel
+                                                            value={Number(productoSeleccionado.precio1)}
+                                                            disabled={modificarPrecio}
+                                                            control={
+                                                                <Radio
+                                                                    icon={<RadioButtonUncheckedIcon />}
+                                                                    checkedIcon={<CheckCircleIcon />}
+                                                                    sx={{
+                                                                        color: '#ccc',
+                                                                        '&.Mui-checked': {
+                                                                            color: '#2196f3', // azul al estar seleccionado
+                                                                            transform: 'scale(1.2)',
+                                                                            transition: 'all 0.3s ease',
+                                                                        },
+                                                                    }}
+                                                                />
                                                             }
-                                                        }}
-                                                    />
-                                                 <FormControlLabel
-                                                        value={Number(productoSeleccionado.precio2)}
-                                                        disabled={modificarPrecio}
-                                                        control={
-                                                            <Radio
-                                                            icon={<RadioButtonUncheckedIcon />}
-                                                            checkedIcon={<CheckCircleIcon />}
+                                                            label={`$ ${productoSeleccionado.precio1}`}
                                                             sx={{
-                                                                color: '#ccc',
-                                                                '&.Mui-checked': {
-                                                                color: '#2196f3',
-                                                                transform: 'scale(1.2)',
+                                                                background: '#fff',
+                                                                borderRadius: '15px',
+                                                                padding: '8px 16px',
+                                                                marginRight: '30px',
+                                                                marginBottom: '10px',
+                                                                border: '2px solid transparent',
+                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                                                                 transition: 'all 0.3s ease',
+                                                                '&:hover': {
+                                                                    boxShadow: '0 0 10px rgba(16, 128, 219, 0.3)',
+                                                                    border: '2px solid #234596',
+                                                                    cursor: 'pointer',
                                                                 },
-                                                            }}
-                                                            />
-                                                        }
-                                                        label={`$ ${productoSeleccionado.precio2}`}
-                                                        sx={{
-                                                            background: '#fff',
-                                                            borderRadius: '15px',
-                                                            padding: '8px 16px',
-                                                            marginRight: '30px',
-                                                            marginBottom:'10px',
-                                                            border: '2px solid transparent',
-                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                                            transition: 'all 0.3s ease',
-                                                            '&:hover': {
-                                                                boxShadow: '0 0 10px rgba(17, 120, 203, 0.3)',
-                                                                border: '2px solid #234596',
-                                                                cursor: 'pointer',
-                                                            },
                                                                 '&.Mui-checked': {
-                                                                border: '2px solid #234596',
+                                                                    border: '2px solid #234596',
+                                                                }
+                                                            }}
+                                                        />
+                                                        <FormControlLabel
+                                                            value={Number(productoSeleccionado.precio2)}
+                                                            disabled={modificarPrecio}
+                                                            control={
+                                                                <Radio
+                                                                    icon={<RadioButtonUncheckedIcon />}
+                                                                    checkedIcon={<CheckCircleIcon />}
+                                                                    sx={{
+                                                                        color: '#ccc',
+                                                                        '&.Mui-checked': {
+                                                                            color: '#2196f3',
+                                                                            transform: 'scale(1.2)',
+                                                                            transition: 'all 0.3s ease',
+                                                                        },
+                                                                    }}
+                                                                />
                                                             }
-                                                        }}
-                                                    />
-                                                </RadioGroup>
-                                            </FormControl>
-                                        </Box>
-                                
+                                                            label={`$ ${productoSeleccionado.precio2}`}
+                                                            sx={{
+                                                                background: '#fff',
+                                                                borderRadius: '15px',
+                                                                padding: '8px 16px',
+                                                                marginRight: '30px',
+                                                                marginBottom: '10px',
+                                                                border: '2px solid transparent',
+                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                                transition: 'all 0.3s ease',
+                                                                '&:hover': {
+                                                                    boxShadow: '0 0 10px rgba(17, 120, 203, 0.3)',
+                                                                    border: '2px solid #234596',
+                                                                    cursor: 'pointer',
+                                                                },
+                                                                '&.Mui-checked': {
+                                                                    border: '2px solid #234596',
+                                                                }
+                                                            }}
+                                                        />
+                                                    </RadioGroup>
+                                                </FormControl>
+                                            </Box>
+
                                             {/* Modificacion del precio  */}
                                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                                                <Box sx={{ width: 320, display: 'flex', alignItems: 'center'}}>
-                                                <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                                                    ¿Precio convenido?
-                                                </Typography>
-                                                    <Checkbox size="large" sx={{ ml: 2 }} checked={modificarPrecio} onChange={handleCheckboxChange} />  
-                                                </Box>      
-                                                    {modificarPrecio && (
-                                                        <Box sx={{ maxWidth: 320, width: 320 }}>
-                                                            <Typography sx={{ fontWeight: 'bold', fontSize: '15px' }}>Nuevo precio por pieza</Typography>
-                                                            <TextField
-                                                                fullWidth
-                                                                required
-                                                                name="new_price"
-                                                                type="number"
-                                                                value={precio}
-                                                                onChange={handlePriceChange}
-                                                            />
-                                                        </Box>
-                                                    )}
+                                                <Box sx={{ width: 320, display: 'flex', alignItems: 'center' }}>
+                                                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                                                        ¿Precio convenido?
+                                                    </Typography>
+                                                    <Checkbox size="large" sx={{ ml: 2 }} checked={modificarPrecio} onChange={handleCheckboxChange} />
+                                                </Box>
+                                                {modificarPrecio && (
+                                                    <Box sx={{ maxWidth: 320, width: 320 }}>
+                                                        <Typography sx={{ fontWeight: 'bold', fontSize: '15px' }}>Nuevo precio por pieza</Typography>
+                                                        <TextField
+                                                            fullWidth
+                                                            required
+                                                            name="new_price"
+                                                            type="number"
+                                                            value={precio}
+                                                            onChange={handlePriceChange}
+                                                        />
+                                                    </Box>
+                                                )}
                                             </Box>
 
                                             {/* //Datos adicionales del pedido      */}
@@ -794,19 +834,19 @@ export function CotizacionPage() {
                                                         fullWidth
                                                         required
                                                         onChange={handleTotalChange}
-                                                        value={cantidad ?? ''}        
+                                                        value={cantidad ?? ''}
                                                         name="cantidad"
                                                         type="number"
                                                     />
                                                 </Box>
                                                 <Box sx={{ maxWidth: 320, width: 320 }}>
-                                                     <Button
+                                                    <Button
                                                         type="submit"
                                                         fullWidth
                                                         color="error"
                                                         variant="contained"
                                                         disabled={!productoSeleccionado || cantidad === null || precio === '' || productosAgregados.some(prod => prod.id === productoSeleccionado.id)}
-                                                        onClick={addProduct}    
+                                                        onClick={addProduct}
                                                         sx={{
                                                             color: "white",
                                                             fontWeight: "bold",
@@ -818,61 +858,61 @@ export function CotizacionPage() {
                                                         <Icon>add</Icon> Agregar producto
                                                     </Button>
                                                 </Box>
-                                                    
-                                            </Box>    
+
+                                            </Box>
                                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                                                 <Box sx={{ maxWidth: 320, width: 320 }}>
-                                                    <Typography sx={{fontWeight: 'bold', fontSize: '15px'}}>Total</Typography>
+                                                    <Typography sx={{ fontWeight: 'bold', fontSize: '15px' }}>Total</Typography>
                                                     <TextField
                                                         fullWidth
                                                         required
                                                         value={total ?? ''}
                                                         name="total"
                                                         type="number"
-                                                        disabled        
+                                                        disabled
                                                     />
                                                 </Box>
-                                                    
-                                            </Box>    
+
+                                            </Box>
                                         </Box>
 
                                     </motion.div>
                                 ) : (
                                     <motion.div
-                                    key="noProductoData"
-                                    initial={{ opacity: 0, y: -50 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 50 }}
-                                    transition={{ duration: 0.7 }}
+                                        key="noProductoData"
+                                        initial={{ opacity: 0, y: -50 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 50 }}
+                                        transition={{ duration: 0.7 }}
                                     >
                                         <Typography sx={{ p: 2 }}>No se encontraron datos del producto.</Typography>
-                                            
+
                                     </motion.div>
                                 )}
                             </Box>
 
                         </Grid>
-                        <Grid size={{ xs:12, sm: 6, md: 6, lg: 6 }} >
-                            
-                            <Typography variant="h6" sx={{ color: "primary.main", fontWeight: "bold", mb: 2, mt:3 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 6 }} >
+
+                            <Typography variant="h6" sx={{ color: "primary.main", fontWeight: "bold", mb: 2, mt: 3 }}>
                                 Productos agregados  {productosAgregados.length > 0 && <span>({productosAgregados.length})</span>}
                             </Typography>
-                            
+
                             <Box component="div" sx={{
-                                        mt: 5,
-                                        width: '100%',
-                                        '& .--header-table': {
-                                            backgroundColor: 'primary.main',
-                                            fontWeight: 900
-                                        },
-                                    }}>
+                                mt: 5,
+                                width: '100%',
+                                '& .--header-table': {
+                                    backgroundColor: 'primary.main',
+                                    fontWeight: 900
+                                },
+                            }}>
                                 <DataGrid
                                     rows={productosAgregados}
                                     columns={columns}
                                     initialState={{ pagination: { paginationModel } }}
                                     pageSizeOptions={[10, 25, 50, 100]}
                                     loading={false}
-                                    
+
                                     localeText={esES.components.MuiDataGrid.defaultProps.localeText}
                                     slots={{
                                         footer: () => (
@@ -881,13 +921,13 @@ export function CotizacionPage() {
                                                 justifyContent="center"
                                                 alignItems="center"
                                                 p={1}
-                                                sx={{bgcolor: '#f1c75eff' }}>
+                                                sx={{ bgcolor: '#f1c75eff' }}>
                                                 <Typography variant="subtitle1" fontWeight="bold">
                                                     Subtotal general: {totalGeneral.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                                                 </Typography>
                                             </Box>
                                         ),
-                                    }} 
+                                    }}
                                 />
                             </Box>
                         </Grid>
@@ -898,11 +938,11 @@ export function CotizacionPage() {
 
             {activeStep === 1 && (
                 <motion.div key="precesPedido" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, y: 50 }} transition={{ duration: 0.7 }}>
-                    <Typography variant="h5" sx={{ color: "primary.main", fontWeight: "bold", mb: 5, mt:3 }}>
+                    <Typography variant="h5" sx={{ color: "primary.main", fontWeight: "bold", mb: 5, mt: 3 }}>
                         Datos adicionales del pedido
                     </Typography>
-                        
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb:2 }}>            
+
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
                         {/* <Box sx={{ maxWidth: 650, width: {xs: 320, sm: 320, lg: 650, md: 650} }}>
                             <Typography sx={{ fontWeight: 'bold', fontSize: '15px' }}>Fecha de entrega estimada</Typography>
                             <TextField
@@ -914,10 +954,10 @@ export function CotizacionPage() {
                         </Box> */}
                         <Box sx={{ width: '88%' }}>
                             <Typography sx={{ fontWeight: 'bold', fontSize: '15px' }}>Cliente</Typography>
-                           
+
                             <AsyncSelect
                                 cacheOptions
-                                loadOptions={loadClientes}  
+                                loadOptions={loadClientes}
                                 defaultOptions={optionClientes}
                                 value={selectedOptionClient}
                                 placeholder="Buscar..."
@@ -934,111 +974,111 @@ export function CotizacionPage() {
                                     }),
                                 }}
                             />
-                        </Box> 
+                        </Box>
                     </Box>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                         {clienteSeleccionado && (
-                            loadAddress ? 
-                            (
-                                <LoaderComponent size="60px" textInfo={'Cargando direcciones...'}/>
-                            ) : (
+                            loadAddress ?
+                                (
+                                    <LoaderComponent size="60px" textInfo={'Cargando direcciones...'} />
+                                ) : (
 
-                                <Box sx={{ maxWidth: 1310, width: {xs: 320, sm: 320, lg: 650, md: 650, xl:1330} }}>
-                                    <Typography sx={{ fontWeight: 'bold', fontSize: '15px' }}>Dirección de entrega</Typography>
+                                    <Box sx={{ maxWidth: 1310, width: { xs: 320, sm: 320, lg: 650, md: 650, xl: 1330 } }}>
+                                        <Typography sx={{ fontWeight: 'bold', fontSize: '15px' }}>Dirección de entrega</Typography>
 
-                                    
+
                                         {address.length === 0 ?
                                             (
-                                                <Typography sx={{ fontSize: '18px', marginTop:'10px', marginBottom:'10px' }}>El Cliente no cuenta con direciones de entrega, por favor agregue una nueva dirección</Typography>
-                                                
-                                            ):
+                                                <Typography sx={{ fontSize: '18px', marginTop: '10px', marginBottom: '10px' }}>El Cliente no cuenta con direciones de entrega, por favor agregue una nueva dirección</Typography>
+
+                                            ) :
                                             (
-                                                
 
-                                            <Grid container spacing={2} sx={{ ml: 2 }}>
-                                                <FormControl>
-                                                    <RadioGroup
-                                                        row
-                                                        aria-labelledby="direccion-radio"
-                                                        name="direccion-radio"
-                                                        value={addresId ?? ''}
-                                                        onChange={(e) => setAddresId(Number(e.target.value))}
-                                                    >
-                                                        {address.map((a) => (
-                                                            <div key={a.id} style={{marginRight:15}}>
-                                                                <FormControlLabel
-                                                                    value={a.id}
-                                                                    control={
-                                                                        <Radio
-                                                                            icon={<RadioButtonUncheckedIcon />}
-                                                                            checkedIcon={<CheckCircleIcon />}
-                                                                            sx={{
-                                                                                color: '#ccc',
-                                                                                '&.Mui-checked': {
-                                                                                    color: '#2196f3',
-                                                                                    transform: 'scale(1.2)',
-                                                                                    transition: 'all 0.3s ease',
-                                                                                },
-                                                                            }}
-                                                                        />
-                                                                    }
-                                                                    label={a.direccion}
-                                                                    sx={{
-                                                                        background: '#fff',
-                                                                        borderRadius: '15px',
-                                                                        padding: '8px 16px',
-                                                                        marginRight: '10px',
-                                                                        marginBottom: '10px',
-                                                                        border: '2px solid transparent',
-                                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                                                        transition: 'all 0.3s ease',
-                                                                        '&:hover': {
-                                                                            boxShadow: '0 0 10px rgba(16, 128, 219, 0.3)',
-                                                                            border: '2px solid #234596',
-                                                                            cursor: 'pointer',
-                                                                        },
-                                                                        '&.Mui-checked': {
-                                                                            border: '2px solid #234596',
+
+                                                <Grid container spacing={2} sx={{ ml: 2 }}>
+                                                    <FormControl>
+                                                        <RadioGroup
+                                                            row
+                                                            aria-labelledby="direccion-radio"
+                                                            name="direccion-radio"
+                                                            value={addresId ?? ''}
+                                                            onChange={(e) => setAddresId(Number(e.target.value))}
+                                                        >
+                                                            {address.map((a) => (
+                                                                <div key={a.id} style={{ marginRight: 15 }}>
+                                                                    <FormControlLabel
+                                                                        value={a.id}
+                                                                        control={
+                                                                            <Radio
+                                                                                icon={<RadioButtonUncheckedIcon />}
+                                                                                checkedIcon={<CheckCircleIcon />}
+                                                                                sx={{
+                                                                                    color: '#ccc',
+                                                                                    '&.Mui-checked': {
+                                                                                        color: '#2196f3',
+                                                                                        transform: 'scale(1.2)',
+                                                                                        transition: 'all 0.3s ease',
+                                                                                    },
+                                                                                }}
+                                                                            />
                                                                         }
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        ))}
-                                                    </RadioGroup>
-                                                </FormControl>
-                                            </Grid>
+                                                                        label={a.direccion}
+                                                                        sx={{
+                                                                            background: '#fff',
+                                                                            borderRadius: '15px',
+                                                                            padding: '8px 16px',
+                                                                            marginRight: '10px',
+                                                                            marginBottom: '10px',
+                                                                            border: '2px solid transparent',
+                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                                            transition: 'all 0.3s ease',
+                                                                            '&:hover': {
+                                                                                boxShadow: '0 0 10px rgba(16, 128, 219, 0.3)',
+                                                                                border: '2px solid #234596',
+                                                                                cursor: 'pointer',
+                                                                            },
+                                                                            '&.Mui-checked': {
+                                                                                border: '2px solid #234596',
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </RadioGroup>
+                                                    </FormControl>
+                                                </Grid>
 
-                                        )}
+                                            )}
 
-                                    <Button
-                                        type="button"
-                                        fullWidth
-                                        variant="text"
-                                        onClick={handleOpen}
-                                        sx={{
-                                            bgcolor: "primary.main",
-                                            "&:hover": { bgcolor: "primary.dark" },
-                                            color: "white",
-                                            borderRadius: 2,
-                                        }}
-                                    >
-                                        Agregar nueva dirección <Icon>add_location_alt</Icon>
-                                    </Button>
-                                    <Box sx={{ maxWidth: 1310, width: {xs: 320, sm: 320, lg: 650, md: 650, xl:1330} }}>
-                                        <Typography sx={{ fontWeight: 'bold', fontSize: '15px', marginTop:'25px' }}>Comentario</Typography>
-                                        <TextField
+                                        <Button
+                                            type="button"
                                             fullWidth
-                                            required
-                                            value={comentario} 
-                                            onChange={(e) => setComentario(e.target.value)}
-                                            name="comentario"
-                                            type="text"
-                                        />
-                                    </Box>    
-                                </Box>
-                            )
+                                            variant="text"
+                                            onClick={handleOpen}
+                                            sx={{
+                                                bgcolor: "primary.main",
+                                                "&:hover": { bgcolor: "primary.dark" },
+                                                color: "white",
+                                                borderRadius: 2,
+                                            }}
+                                        >
+                                            Agregar nueva dirección <Icon>add_location_alt</Icon>
+                                        </Button>
+                                        <Box sx={{ maxWidth: 1310, width: { xs: 320, sm: 320, lg: 650, md: 650, xl: 1330 } }}>
+                                            <Typography sx={{ fontWeight: 'bold', fontSize: '15px', marginTop: '25px' }}>Comentario</Typography>
+                                            <TextField
+                                                fullWidth
+                                                required
+                                                value={comentario}
+                                                onChange={(e) => setComentario(e.target.value)}
+                                                name="comentario"
+                                                type="text"
+                                            />
+                                        </Box>
+                                    </Box>
+                                )
                         )}
-                                
+
                         <Modal
                             open={open}
                             onClose={handleClose}
@@ -1049,27 +1089,65 @@ export function CotizacionPage() {
                                 <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
                                     Agregar nueva dirección
                                 </Typography>
+
                                 <Box
                                     component="form"
                                     onSubmit={(e) => {
-                                        e.preventDefault()
+                                        e.preventDefault();
                                         const formData = new FormData(e.currentTarget);
+
                                         const data = {
-                                            direccion: String(formData.get("direccion") ?? ''),
-                                            telefono: String(formData.get("telefono") ?? ''),
+                                            calle: String(formData.get("calle") ?? ""),
+                                            municipio: String(formData.get("municipio") ?? ""),
+                                            numero: String(formData.get("numero") ?? ""),
+                                            colonia: String(formData.get("colonia") ?? ""),
+                                            telefono: String(formData.get("telefono") ?? ""),
+                                            codigo_postal: String(formData.get("codigo_postal") ?? ""),
+                                            estado: String(formData.get("estado") ?? ""),
+                                            zona: zona, // sigue usando tu hook de zona actual
                                         };
 
                                         createAddresClient(data);
                                     }}
                                     sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                                 >
+                                    {/* Calle */}
                                     <TextField
-                                        label="Dirección"
-                                        name="direccion"
+                                        label="Calle"
+                                        name="calle"
                                         variant="outlined"
                                         required
                                         fullWidth
                                     />
+
+                                    {/* Municipio / Ciudad */}
+                                    <TextField
+                                        label="Municipio / Ciudad"
+                                        name="municipio"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Número exterior/interior */}
+                                    <TextField
+                                        label="Número exterior / interior"
+                                        name="numero"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Colonia */}
+                                    <TextField
+                                        label="Colonia"
+                                        name="colonia"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Teléfono */}
                                     <TextField
                                         label="Teléfono"
                                         name="telefono"
@@ -1078,143 +1156,190 @@ export function CotizacionPage() {
                                         fullWidth
                                         type="tel"
                                     />
+
+                                    {/* Código Postal */}
+                                    <TextField
+                                        label="Código Postal"
+                                        name="codigo_postal"
+                                        variant="outlined"
+                                        required
+                                        fullWidth
+                                    />
+
+                                    {/* Dropdown de Estado */}
+                                    <FormControl fullWidth variant="outlined" required>
+                                        <InputLabel id="estado-label">Estado</InputLabel>
+                                        <Select
+                                            labelId="estado-label"
+                                            name="estado"
+                                            label="Estado"
+                                            defaultValue=""
+                                        >
+                                            {zonas.map((z) => (
+                                                <MenuItem key={z.id} value={z.id}>
+                                                    {z.descripcion}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+
+                                    {/* Dropdown de Zonas */}
+                                    <FormControl fullWidth variant="outlined" required>
+                                        <InputLabel id="zona-label">Zona</InputLabel>
+                                        <Select
+                                            labelId="zona-label"
+                                            value={zona}
+                                            onChange={handleZonaChange}
+                                            label="Zona"
+                                        >
+                                            {zonas.map((z) => (
+                                                <MenuItem key={z.id} value={z.id}>
+                                                    {z.nombre}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+
+                                    {/* Botones */}
                                     <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
                                         <Button onClick={handleClose} color="error" variant="contained" disabled={saveAddress}>
                                             Cancelar
                                         </Button>
                                         <Button type="submit" variant="contained" color="primary" disabled={saveAddress}>
-                                            {saveAddress ? <CircularProgress color="inherit" size="25px" /> : 'Guardar'}
+                                            {saveAddress ? <CircularProgress color="inherit" size="25px" /> : "Guardar"}
                                         </Button>
                                     </Box>
                                 </Box>
                             </Box>
                         </Modal>
-                    </Box>       
+                    </Box>
                 </motion.div>
             )}
 
             {activeStep === 2 && (
 
-                   <motion.div key="precesPedido" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, y: 50 }} transition={{ duration: 0.7 }} style={{justifyContent:'center'}}>
-                        {/* Informacion de la cotizacion */}
-                        <Box boxShadow={1} sx={{
-                                background: "#fff",
-                                padding: "20px",
-                                borderRadius: "10px",
-                                marginTop: 5,
-                                width:"100%"
-                            }}
-                        >
-                            <Box sx={{ display: "flex", alignItems: "start", justifyContent: "start", gap: 2 }}>
-                                <Icon color="primary" sx={{ fontSize: 35 }} >description</Icon>
-                                <Typography color="primary" sx={{ fontWeight: 'bold', fontSize:'25px' }} >
-                                    Información de la Cotización
-                                </Typography>
-                            </Box>
-                            <Box sx={{ mt: 2 }}>
-                                {/* Fecha */}
-                                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                                    <Typography  display="flex" alignItems="center" gap={0.5}>
-                                        <Icon>calendar_today</Icon>
-                                        Fecha:
-                                    </Typography>
-
-                                    <Typography sx={{ fontWeight: 'bold' }}>{ getTimeNow() }</Typography>
-                                </Box>
-                                {/* Folio */}
-                                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                                    <Typography  display="flex" alignItems="center" gap={0.5}>
-                                        <Icon>perm_identity</Icon>
-                                        Cliente :
-                                    </Typography>
-
-                                        <Typography sx={{ fontWeight: 'bold' }}>{ clienteSeleccionado?.razon_social }</Typography>
-                                </Box>
-                               
-                                {/* Cliente */}
-                                <Box display="flex" alignItems="center" justifyContent="space-between">
-                                    <Typography  display="flex" alignItems="center" gap={0.5}>
-                                        <Icon>phone</Icon>
-                                        Teléfono:
-                                    </Typography>
-
-                                        <Typography sx={{ fontWeight: 'bold' }}>{ clienteSeleccionado?.telefono_particular }</Typography>
-                                </Box>
-     
-                            </Box>  
-                            
+                <motion.div key="precesPedido" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, y: 50 }} transition={{ duration: 0.7 }} style={{ justifyContent: 'center' }}>
+                    {/* Informacion de la cotizacion */}
+                    <Box boxShadow={1} sx={{
+                        background: "#fff",
+                        padding: "20px",
+                        borderRadius: "10px",
+                        marginTop: 5,
+                        width: "100%"
+                    }}
+                    >
+                        <Box sx={{ display: "flex", alignItems: "start", justifyContent: "start", gap: 2 }}>
+                            <Icon color="primary" sx={{ fontSize: 35 }} >description</Icon>
+                            <Typography color="primary" sx={{ fontWeight: 'bold', fontSize: '25px' }} >
+                                Información de la Cotización
+                            </Typography>
                         </Box>
-                        
-                        {/* Lista de productos  */}
-                        <Box boxShadow={1} sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2,background: "#fff",
-                                    padding: "20px",
+                        <Box sx={{ mt: 2 }}>
+                            {/* Fecha */}
+                            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                                <Typography display="flex" alignItems="center" gap={0.5}>
+                                    <Icon>calendar_today</Icon>
+                                    Fecha:
+                                </Typography>
+
+                                <Typography sx={{ fontWeight: 'bold' }}>{getTimeNow()}</Typography>
+                            </Box>
+                            {/* Folio */}
+                            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                                <Typography display="flex" alignItems="center" gap={0.5}>
+                                    <Icon>perm_identity</Icon>
+                                    Cliente :
+                                </Typography>
+
+                                <Typography sx={{ fontWeight: 'bold' }}>{clienteSeleccionado?.razon_social}</Typography>
+                            </Box>
+
+                            {/* Cliente */}
+                            <Box display="flex" alignItems="center" justifyContent="space-between">
+                                <Typography display="flex" alignItems="center" gap={0.5}>
+                                    <Icon>phone</Icon>
+                                    Teléfono:
+                                </Typography>
+
+                                <Typography sx={{ fontWeight: 'bold' }}>{clienteSeleccionado?.telefono_particular}</Typography>
+                            </Box>
+
+                        </Box>
+
+                    </Box>
+
+                    {/* Lista de productos  */}
+                    <Box boxShadow={1} sx={{
+                        display: "flex", flexDirection: "column", gap: 2, mt: 2, background: "#fff",
+                        padding: "20px",
+                        borderRadius: "10px",
+                        width: "100%"
+                    }}>
+
+                        <Box sx={{ display: "flex", alignItems: "start", justifyContent: "start", gap: 2 }}>
+                            <Typography color="primary" sx={{ fontWeight: 'bold' }} variant="h5">
+                                Productos Cotizados
+                            </Typography>
+
+                        </Box>
+                        {productosAgregados.map((producto, index) => (
+                            <Box
+                                key={index}
+                                sx={{
+                                    // background: "#f9f9f9",
                                     borderRadius: "10px",
-                                    width:"100%" }}>
-                                        
-                            <Box sx={{ display: "flex", alignItems: "start", justifyContent: "start", gap: 2 }}>
-                                    <Typography color="primary" sx={{ fontWeight: 'bold' }} variant="h5">
-                                        Productos Cotizados
-                                    </Typography>
-                                
-                                </Box>
-                                {productosAgregados.map((producto, index) => (
-                                    <Box
-                                    key={index}
+                                    padding: 2,
+                                    borderBottom: "1px solid #e0e0e0",
+                                }}
+                            >
+                                {/* Descripción */}
+                                <Typography sx={{ fontWeight: "bold" }}>
+                                    {producto.descripcion}
+                                </Typography>
+
+                                {/* Clave */}
+                                <Typography variant="body2" sx={{ color: "gray", mb: 1 }}>
+                                    Clave: {producto.clave}
+                                </Typography>
+
+                                {/* Cantidad y Precio */}
+                                <Box
                                     sx={{
-                                        // background: "#f9f9f9",
-                                        borderRadius: "10px",
-                                        padding: 2,
-                                        borderBottom: "1px solid #e0e0e0",
-                                    }}
-                                    >
-                                    {/* Descripción */}
-                                    <Typography sx={{ fontWeight: "bold" }}>
-                                        {producto.descripcion}
-                                    </Typography>
-
-                                    {/* Clave */}
-                                    <Typography variant="body2" sx={{ color: "gray", mb: 1 }}>
-                                        Clave: {producto.clave}
-                                    </Typography>
-
-                                    {/* Cantidad y Precio */}
-                                    <Box
-                                        sx={{
                                         display: "flex",
                                         justifyContent: "space-between",
                                         borderBottom: "1px solid #e0e0e0",
                                         pb: 1,
-                                        }}
-                                    >
-                                        <Typography>Cantidad: {producto.cantidad}</Typography>
-                                        <Typography>
+                                    }}
+                                >
+                                    <Typography>Cantidad: {producto.cantidad}</Typography>
+                                    <Typography>
                                         Precio Unitario: ${producto.precio_unitario.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                                        </Typography>
-                                    </Box>
+                                    </Typography>
+                                </Box>
 
-                                    {/* Subtotal */}
-                                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
-                                        <Typography sx={{ fontWeight: "bold" }}>Subtotal:</Typography>
-                                        <Typography sx={{ fontWeight: "bold" }}>
+                                {/* Subtotal */}
+                                <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                                    <Typography sx={{ fontWeight: "bold" }}>Subtotal:</Typography>
+                                    <Typography sx={{ fontWeight: "bold" }}>
                                         ${(producto.cantidad * producto.precio_unitario).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                                        </Typography>
-                                    </Box>
-                                    </Box>
-                                ))}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        ))}
 
-                        </Box>
- 
-                        {/* Totales generales */}
-                        <Box sx={{ background: "#fff", borderRadius: "10px", padding: 2, justifyContent: "space-between", mt: 2,}} boxShadow={1}>
-                            {(() => {
-                                const subtotal = productosAgregados.reduce(
+                    </Box>
+
+                    {/* Totales generales */}
+                    <Box sx={{ background: "#fff", borderRadius: "10px", padding: 2, justifyContent: "space-between", mt: 2, }} boxShadow={1}>
+                        {(() => {
+                            const subtotal = productosAgregados.reduce(
                                 (acc, p) => acc + p.cantidad * p.precio_unitario,
                                 0
-                                );
-                                // const iva = subtotal * 0.16;
-                                // const total = subtotal + iva;
+                            );
+                            // const iva = subtotal * 0.16;
+                            // const total = subtotal + iva;
 
-                                return (
+                            return (
                                 <>
                                     {/* Subtotal */}
                                     <Box
@@ -1278,22 +1403,22 @@ export function CotizacionPage() {
                                         </Typography>
                                     </Box>
                                 </>
-                                );
-                            })()}
-                        </Box>
-                            
-                        {/* Terminos y condicones  */}
-                        <Box sx={{ background: "#fff", borderRadius: "10px", padding: 2, justifyContent: "space-between", mt: 2, }} boxShadow={1}>
-                            <Typography sx={{fontWeight:'bold', fontSize:'20px', ml:2}}>Términos y Condiciones</Typography>    
-                            <ul>
-                                <li>Esta cotización tiene una vigencia de 30 días a partir de la fecha de emisión.</li>
-                                <li>Los precios incluyen IVA y están sujetos a cambios sin previo aviso.</li>
-                                <li>Los productos están sujetos a disponibilidad en inventario.</li>
-                            </ul>
-                        </Box>
+                            );
+                        })()}
+                    </Box>
 
-                    </motion.div>
-                
+                    {/* Terminos y condicones  */}
+                    <Box sx={{ background: "#fff", borderRadius: "10px", padding: 2, justifyContent: "space-between", mt: 2, }} boxShadow={1}>
+                        <Typography sx={{ fontWeight: 'bold', fontSize: '20px', ml: 2 }}>Términos y Condiciones</Typography>
+                        <ul>
+                            <li>Esta cotización tiene una vigencia de 30 días a partir de la fecha de emisión.</li>
+                            <li>Los precios incluyen IVA y están sujetos a cambios sin previo aviso.</li>
+                            <li>Los productos están sujetos a disponibilidad en inventario.</li>
+                        </ul>
+                    </Box>
+
+                </motion.div>
+
             )}
 
             {activeStep === 3 && (
@@ -1308,8 +1433,8 @@ export function CotizacionPage() {
                     </Box>
 
                 ) : (
-                        
-                    <motion.div key="precesPedido" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, y: 50 }} transition={{ duration: 0.7 }} style={{justifyContent:'center', display:'flex'}}>
+
+                    <motion.div key="precesPedido" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, y: 50 }} transition={{ duration: 0.7 }} style={{ justifyContent: 'center', display: 'flex' }}>
                         <Box
                             sx={{
                                 background: "#fff",
@@ -1319,7 +1444,7 @@ export function CotizacionPage() {
                                 width: {
                                     xs: "100%",
                                     md: "100%",
-                                    lg: "70%",   
+                                    lg: "70%",
                                 },
                             }}
                         >
@@ -1341,91 +1466,91 @@ export function CotizacionPage() {
                             >
                                 {/* Folio */}
                                 <Box display="flex" alignItems="center" justifyContent="space-between">
-                                    <Typography  display="flex" alignItems="center" gap={0.5}>
+                                    <Typography display="flex" alignItems="center" gap={0.5}>
                                         <Icon color="success">text_snippet</Icon>
                                         Pedido:
                                     </Typography>
 
-                                        <Typography sx={{ fontWeight: 'bold' }}>#{ pedido }</Typography>
+                                    <Typography sx={{ fontWeight: 'bold' }}>#{pedido}</Typography>
                                 </Box>
                                 {/* Fecha */}
                                 <Box display="flex" alignItems="center" justifyContent="space-between">
-                                    <Typography  display="flex" alignItems="center" gap={0.5}>
+                                    <Typography display="flex" alignItems="center" gap={0.5}>
                                         <Icon color="success">access_time_filled</Icon>
                                         Fecha:
                                     </Typography>
 
-                                    <Typography sx={{ fontWeight: 'bold' }}>{ getTimeNow() }</Typography>
+                                    <Typography sx={{ fontWeight: 'bold' }}>{getTimeNow()}</Typography>
                                 </Box>
                                 {/* Cliente */}
                                 <Box display="flex" alignItems="center" justifyContent="space-between">
-                                    <Typography  display="flex" alignItems="center" gap={0.5}>
+                                    <Typography display="flex" alignItems="center" gap={0.5}>
                                         <Icon color="success">diversity_3</Icon>
                                         Cliente:
                                     </Typography>
 
-                                        <Typography sx={{ fontWeight: 'bold' }}>{ clienteSeleccionado?.razon_social }</Typography>
-                                
+                                    <Typography sx={{ fontWeight: 'bold' }}>{clienteSeleccionado?.razon_social}</Typography>
+
                                 </Box>
                                 <Box display="flex" alignItems="center" justifyContent="space-between">
-                                    <Typography  display="flex" alignItems="center" gap={0.5}>
+                                    <Typography display="flex" alignItems="center" gap={0.5}>
                                         <Icon color="success">comment</Icon>
                                         Comentario:
                                     </Typography>
-                                    <Typography sx={{ fontWeight: 'bold' }}>{ comentario || "Sin comentarios" }</Typography>
-                                </Box>    
-     
-                            </Box>  
-                            <Box sx={{ display: "flex", alignItems: "start", justifyContent: "start", gap: 2, mt:3 }}>
+                                    <Typography sx={{ fontWeight: 'bold' }}>{comentario || "Sin comentarios"}</Typography>
+                                </Box>
+
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "start", justifyContent: "start", gap: 2, mt: 3 }}>
                                 <Icon color="info" sx={{ fontSize: 30 }} >inventory_2</Icon>
                                 <Typography color="#083c6b" sx={{ fontWeight: 'bold' }} variant="h5">
                                     Detalles del Pedido
                                 </Typography>
-                            
+
                             </Box>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt:4 }}>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 4 }}>
                                 {productosAgregados.map((producto, index) => (
                                     <Box
-                                    key={index}
-                                    sx={{
-                                        background: "#f9f9f9",
-                                        borderRadius: "10px",
-                                        padding: 2,
-                                        border: "1px solid #e0e0e0",
-                                    }}
-                                    >
-                                    {/* Descripción */}
-                                    <Typography sx={{ fontWeight: "bold" }}>
-                                        {producto.descripcion}
-                                    </Typography>
-
-                                    {/* Clave */}
-                                    <Typography variant="body2" sx={{ color: "gray", mb: 1 }}>
-                                        Clave: {producto.clave}
-                                    </Typography>
-
-                                    {/* Cantidad y Precio */}
-                                    <Box
+                                        key={index}
                                         sx={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        borderBottom: "1px solid #e0e0e0",
-                                        pb: 1,
+                                            background: "#f9f9f9",
+                                            borderRadius: "10px",
+                                            padding: 2,
+                                            border: "1px solid #e0e0e0",
                                         }}
                                     >
-                                        <Typography>Cantidad: {producto.cantidad}</Typography>
-                                        <Typography>
-                                        Precio: ${producto.precio_unitario.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                                        </Typography>
-                                    </Box>
-
-                                    {/* Subtotal */}
-                                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
-                                        <Typography sx={{ fontWeight: "bold" }}>Subtotal:</Typography>
+                                        {/* Descripción */}
                                         <Typography sx={{ fontWeight: "bold" }}>
-                                        ${(producto.cantidad * producto.precio_unitario).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                                            {producto.descripcion}
                                         </Typography>
-                                    </Box>
+
+                                        {/* Clave */}
+                                        <Typography variant="body2" sx={{ color: "gray", mb: 1 }}>
+                                            Clave: {producto.clave}
+                                        </Typography>
+
+                                        {/* Cantidad y Precio */}
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                borderBottom: "1px solid #e0e0e0",
+                                                pb: 1,
+                                            }}
+                                        >
+                                            <Typography>Cantidad: {producto.cantidad}</Typography>
+                                            <Typography>
+                                                Precio: ${producto.precio_unitario.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Subtotal */}
+                                        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                                            <Typography sx={{ fontWeight: "bold" }}>Subtotal:</Typography>
+                                            <Typography sx={{ fontWeight: "bold" }}>
+                                                ${(producto.cantidad * producto.precio_unitario).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 ))}
 
@@ -1441,29 +1566,29 @@ export function CotizacionPage() {
                                     }}
                                 >
                                     <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>
-                                    Total:
+                                        Total:
                                     </Typography>
                                     <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>
-                                    ${productosAgregados
-                                        .reduce((acc, p) => acc + p.cantidad * p.precio_unitario, 0)
-                                        .toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                                        ${productosAgregados
+                                            .reduce((acc, p) => acc + p.cantidad * p.precio_unitario, 0)
+                                            .toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                                     </Typography>
                                 </Box>
-                                </Box>
- 
-                                
-                                
+                            </Box>
+
+
+
                         </Box>
                     </motion.div>
                 )
-                
+
             )}
 
-          
-    
+
+
             {/* Botones de agregar producto y siguiente */}
             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ duration: 0.4 }}>
-                <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" },  justifyContent: "center", alignItems: "center", mt: 5, gap: 2,mb: 5,flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "center", alignItems: "center", mt: 5, gap: 2, mb: 5, flexWrap: "wrap" }}>
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, width: { xs: "100%", sm: "auto" } }}>
 
                         {activeStep < 3 ? (
@@ -1486,31 +1611,31 @@ export function CotizacionPage() {
 
 
                                 {activeStep === 2 ? (
-                                        <>
-                                        
-                                            <Tooltip title='Confirmación del pedido'  slots={{ transition: Zoom }}>
-                                                <Button
-                                                    type="submit"
-                                                    fullWidth
-                                                    variant="contained"
-                                                    disabled={productosAgregados.length === 0 && clienteSeleccionado?.id === null}
-                                                    onClick={showAlert}
-                                                    sx={{
-                                                        bgcolor: "primary.main",
-                                                        "&:hover": { bgcolor: "primary.dark" },
-                                                        color: "white",
-                                                        borderRadius: 2,
-                                                    }}
-                                                >
-                                                    Finalizar <Icon>navigate_next</Icon>
-                                                </Button>
-                                            </Tooltip>
-                                        
-                                        </>
-                                
-                                ): (
-                                        
-                                    
+                                    <>
+
+                                        <Tooltip title='Confirmación del pedido' slots={{ transition: Zoom }}>
+                                            <Button
+                                                type="submit"
+                                                fullWidth
+                                                variant="contained"
+                                                disabled={productosAgregados.length === 0 && clienteSeleccionado?.id === null}
+                                                onClick={showAlert}
+                                                sx={{
+                                                    bgcolor: "primary.main",
+                                                    "&:hover": { bgcolor: "primary.dark" },
+                                                    color: "white",
+                                                    borderRadius: 2,
+                                                }}
+                                            >
+                                                Finalizar <Icon>navigate_next</Icon>
+                                            </Button>
+                                        </Tooltip>
+
+                                    </>
+
+                                ) : (
+
+
                                     <Button
                                         type="submit"
                                         fullWidth
@@ -1526,23 +1651,23 @@ export function CotizacionPage() {
                                     >
                                         Siguiente <Icon>navigate_next</Icon>
                                     </Button>
-                                    
-                                        
+
+
                                 )}
 
-                            
-                            
+
+
                             </>
-                            
-                            ) : (
-                        
+
+                        ) : (
+
                             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ duration: 0.4 }}>
                                 <Tooltip title="Ir a Consultar" slots={{ transition: Zoom }}>
                                     <Button
                                         type="submit"
                                         fullWidth
                                         variant="contained"
-                                        disabled={sendingPedido}    
+                                        disabled={sendingPedido}
                                         onClick={() => navigate("/consultar-pedido")}
                                         sx={{
                                             bgcolor: "primary.main",
@@ -1554,14 +1679,14 @@ export function CotizacionPage() {
                                         Consultar pedidos <Icon>arrow_upward</Icon>
                                     </Button>
                                 </Tooltip>
-                            </motion.div> 
-                            
-                        )}    
+                            </motion.div>
+
+                        )}
 
                     </Box>
                 </Box>
             </motion.div>
 
-        </Box>    
+        </Box>
     )
 }

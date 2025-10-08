@@ -532,7 +532,16 @@ export function CrearPedidoPage() {
     }
 
     //Funcion para crear una nueva dirreccion
-    const createAddresClient = async (data: { direccion: string, telefono: string }) => {
+    const createAddresClient = async (data: {
+        calle: string,
+        municipio: string,
+        numero: string,
+        colonia: string,
+        telefono: string,
+        codigo_postal: string,
+        estado: string,
+        zona: string
+    }) => {
 
         const id = Number(clienteSeleccionado?.id)
 
