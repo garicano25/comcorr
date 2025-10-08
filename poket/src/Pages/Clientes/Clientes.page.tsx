@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, CircularProgress, Icon, Modal, TextField, Tooltip, Typography, useMediaQuery, useTheme, Zoom } from "@mui/material";
+import { Box, Button, CircularProgress, FormControl, Icon, InputLabel, MenuItem, Modal, Select, SelectChangeEvent, TextField, Tooltip, Typography, useMediaQuery, useTheme, Zoom } from "@mui/material";
 import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales";
 import { decodeToken } from "../../utils/options.token";
@@ -8,7 +8,14 @@ import { useSnackbar } from "notistack";
 import { createAddressClient, createClientService, getClientes, syncClientes } from "../../services/clientes.services";
 import { ICliente, IDataClientes, IResponseCreateAddress, IResponseCreateCliente } from "../../interfaces/catalogos.interface";
 import { styleModal } from "../../utils/styles.aditional";
+import { getZonas } from "../../services/productos.services";
 
+// Tipos
+interface Zona {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+}
 export function ClientesPage() {
 
     const [pending, setPending] = useState(true);
@@ -17,20 +24,39 @@ export function ClientesPage() {
     const { enqueueSnackbar } = useSnackbar();
     const [rowCount, setRowCount] = useState<number>(0);
     const [open, setOpen] = useState(false);
-    const [open2, setOpen2] = useState(false);
     const [saveClient, setSaveClient] = useState(false);
     const [saveAddress, setSaveAddress] = useState(false);
     const [clienteSeleccionado, setClienteSeleccionado] = useState<ICliente | null>(null);
+    const [zonas, setZonas] = useState<Zona[]>([]);
+    const [zona, setZona] = useState<string>("");
+    //const [loading, setLoading] = useState<boolean>(true);
+    useEffect(() => {
+        const fetchZonas = async () => {
+            try {
+                const data = await getZonas();
+                if (Array.isArray(data.zonas)) {
+                    setZonas(data.zonas); // ahora sí es un array
+                    if (data.zonas.length > 0) setZona(String(data.zonas[0].id)); // inicializa con la primera zona
+                } else {
+                    console.error("La API no devolvió un array de zonas");
+                }
+            } catch (error) {
+                console.error("Error al cargar zonas:", error);
+            }
+        };
 
+        fetchZonas(); // llamamos a la función al montar
+    }, []);
+    const handleZonaChange = (event: SelectChangeEvent<string>) => {
+        setZona(event.target.value);
+    };
     //Cliente
     const handleClose = () => setOpen(false);
     const handleOpen = () => setOpen(true);
 
-    //Direccion
-    const handleClose2 = () => setOpen2(false);
+
     const handleOpen2 = (row: ICliente) => {
         setClienteSeleccionado(row)
-        setOpen2(true)
     };
 
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -163,7 +189,16 @@ export function ClientesPage() {
 
 
     //Funcion para crear una nueva dirreccion
-    const createAddresClient = async (data: { direccion: string, telefono: string }) => {
+    const createAddresClient = async (data: {
+        calle: string,
+        municipio: string,
+        numero: string,
+        colonia: string,
+        telefono: string,
+        codigo_postal: string,
+        estado: string,
+        zona: string
+    }) => {
 
         const id = Number(clienteSeleccionado?.id)
 
@@ -174,8 +209,7 @@ export function ClientesPage() {
             handleClose();
 
             if (response.success) {
-                handleClose2()
-                enqueueSnackbar("Dirección agregada con exito", { variant: 'success' });
+
 
             } else {
                 enqueueSnackbar("Error al crear una nueva dirección", { variant: 'error' });
@@ -329,8 +363,8 @@ export function ClientesPage() {
 
             {/* Modal Add Address */}
             <Modal
-                open={open2}
-                onClose={handleClose2}
+                open={open}
+                onClose={handleClose}
                 aria-labelledby="modal-modal-title"
                 aria-describedby="modal-modal-description"
             >
@@ -338,27 +372,65 @@ export function ClientesPage() {
                     <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
                         Agregar nueva dirección
                     </Typography>
+
                     <Box
                         component="form"
                         onSubmit={(e) => {
-                            e.preventDefault()
+                            e.preventDefault();
                             const formData = new FormData(e.currentTarget);
+
                             const data = {
-                                direccion: String(formData.get("direccion") ?? ''),
-                                telefono: String(formData.get("telefono") ?? ''),
+                                calle: String(formData.get("calle") ?? ""),
+                                municipio: String(formData.get("municipio") ?? ""),
+                                numero: String(formData.get("numero") ?? ""),
+                                colonia: String(formData.get("colonia") ?? ""),
+                                telefono: String(formData.get("telefono") ?? ""),
+                                codigo_postal: String(formData.get("codigo_postal") ?? ""),
+                                estado: String(formData.get("estado") ?? ""),
+                                zona: zona, // sigue usando tu hook de zona actual
                             };
 
                             createAddresClient(data);
                         }}
                         sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                     >
+                        {/* Calle */}
                         <TextField
-                            label="Dirección"
-                            name="direccion"
+                            label="Calle"
+                            name="calle"
                             variant="outlined"
                             required
                             fullWidth
                         />
+
+                        {/* Municipio / Ciudad */}
+                        <TextField
+                            label="Municipio / Ciudad"
+                            name="municipio"
+                            variant="outlined"
+                            required
+                            fullWidth
+                        />
+
+                        {/* Número exterior/interior */}
+                        <TextField
+                            label="Número exterior / interior"
+                            name="numero"
+                            variant="outlined"
+                            required
+                            fullWidth
+                        />
+
+                        {/* Colonia */}
+                        <TextField
+                            label="Colonia"
+                            name="colonia"
+                            variant="outlined"
+                            required
+                            fullWidth
+                        />
+
+                        {/* Teléfono */}
                         <TextField
                             label="Teléfono"
                             name="telefono"
@@ -367,12 +439,57 @@ export function ClientesPage() {
                             fullWidth
                             type="tel"
                         />
+
+                        {/* Código Postal */}
+                        <TextField
+                            label="Código Postal"
+                            name="codigo_postal"
+                            variant="outlined"
+                            required
+                            fullWidth
+                        />
+
+                        {/* Dropdown de Estado */}
+                        <FormControl fullWidth variant="outlined" required>
+                            <InputLabel id="estado-label">Estado</InputLabel>
+                            <Select
+                                labelId="estado-label"
+                                name="estado"
+                                label="Estado"
+                                defaultValue=""
+                            >
+                                {zonas.map((z) => (
+                                    <MenuItem key={z.id} value={z.id}>
+                                        {z.descripcion}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        {/* Dropdown de Zonas */}
+                        <FormControl fullWidth variant="outlined" required>
+                            <InputLabel id="zona-label">Zona</InputLabel>
+                            <Select
+                                labelId="zona-label"
+                                value={zona}
+                                onChange={handleZonaChange}
+                                label="Zona"
+                            >
+                                {zonas.map((z) => (
+                                    <MenuItem key={z.id} value={z.id}>
+                                        {z.nombre}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        {/* Botones */}
                         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
-                            <Button onClick={handleClose2} color="error" variant="contained" disabled={saveAddress}>
+                            <Button onClick={handleClose} color="error" variant="contained" disabled={saveAddress}>
                                 Cancelar
                             </Button>
                             <Button type="submit" variant="contained" color="primary" disabled={saveAddress}>
-                                {saveAddress ? <CircularProgress color="inherit" size="25px" /> : 'Guardar'}
+                                {saveAddress ? <CircularProgress color="inherit" size="25px" /> : "Guardar"}
                             </Button>
                         </Box>
                     </Box>
